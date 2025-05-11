@@ -1,0 +1,40 @@
+// components/SubHeader.tsx
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+
+export default function SubHeader({ onFilterPress }: { onFilterPress: () => void }) {
+  return (
+    <View style={styles.container}>
+      <View style={styles.leftSection}>
+        <MaterialCommunityIcons name="layers" size={24} color="#A45B17" />
+        <Text style={styles.title}>Historique général</Text>
+      </View>
+      <TouchableOpacity onPress={onFilterPress}>
+        <MaterialIcons name="filter-list" size={28} color="#A45B17" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  title: {
+    marginLeft: 8,
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#A45B17',
+  },
+});
