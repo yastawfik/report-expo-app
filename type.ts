@@ -18,6 +18,7 @@ export type Report = {
     ReportDetail: { report: Report};
     ReportForm: { report: Report};
     Home: { newReport: any } | undefined;
+    EditReport: { report: Report };
   };
   export interface User {
     id: number;

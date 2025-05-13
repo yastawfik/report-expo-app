@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,79 +14,99 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { Platform } from 'react-native';
+
 
 type ReportDetailRouteProp = RouteProp<RootStackParamList, 'ReportDetail'>;
 
 const downloadReportPdf = async (reportId: number) => {
   try {
     const downloadUrl = `http://192.168.103.37:8000/reports/${reportId}/download`;
-    const fileUri = FileSystem.documentDirectory + `rapport_${reportId}.pdf`;
 
-    console.log('Attempting to download:', downloadUrl);
+    if (Platform.OS === 'web') {
+      // For web, open the PDF in a new tab or trigger a download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `rapport_${reportId}.pdf`;
+      link.target = '_blank';
+      link.click();
 
-    const downloadResumable = FileSystem.createDownloadResumable(downloadUrl, fileUri);
-    const downloadResult = await downloadResumable.downloadAsync();
+      Alert.alert('Téléchargement', 'Le fichier PDF est en train de se télécharger.');
+    } else if (Platform.OS === 'android' || Platform.OS === 'ios') {
+      // For mobile (Android/iOS), use expo-file-system
+      const fileUri = FileSystem.documentDirectory + `rapport_${reportId}.pdf`;
 
-    if (downloadResult?.uri) {
-      console.log('PDF downloaded to:', downloadResult.uri);
-      Alert.alert('Téléchargement réussi', 'PDF enregistré et prêt à être partagé.');
+      console.log('Attempting to download:', downloadUrl);
 
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(downloadResult.uri);
+      const downloadResumable = FileSystem.createDownloadResumable(downloadUrl, fileUri);
+      const downloadResult = await downloadResumable.downloadAsync();
+
+      if (downloadResult?.uri) {
+        console.log('PDF downloaded to:', downloadResult.uri);
+        Alert.alert('Téléchargement réussi', 'PDF enregistré et prêt à être partagé.');
+
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(downloadResult.uri);
+        } else {
+          Alert.alert('Partage non disponible', 'Impossible de partager ce fichier.');
+        }
       } else {
-        Alert.alert('Partage non disponible', 'Impossible de partager ce fichier.');
+        Alert.alert('Erreur', 'Le téléchargement a échoué.');
       }
-    } else {
-      Alert.alert('Erreur', 'Le téléchargement a échoué.');
     }
   } catch (error) {
     console.error('Download error:', error);
     Alert.alert('Erreur', 'Échec du téléchargement.');
   }
 };
-
 export default function ReportDetail() {
   const {
     params: { report },
   } = useRoute<ReportDetailRouteProp>();
 
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const [weights, setWeights] = useState<number[]>([]);
-  const [average, setAverage] = useState(0);
 
-  const downloadButtonRef = useRef(null);
+  // Parse weights safely
+ const [weights, setWeights] = useState<number[]>([]);
+const [average, setAverage] = useState(0);
 
-  useEffect(() => {
-    console.log("Raw report.weights:", report.weights);
-    try {
-      if (Array.isArray(report.weights)) {
-        console.log("Weights already array:", report.weights);
-        setWeights(report.weights);
-      } else if (typeof report.weights === 'string') {
-        const parsed = JSON.parse(report.weights);
-        console.log("Parsed weights:", parsed);
-        if (Array.isArray(parsed)) {
-          setWeights(parsed);
-        } else {
-          console.warn("Parsed weights is not array.");
-          setWeights([]);
-        }
+useEffect(() => {
+  try {
+    if (Array.isArray(report.weights)) {
+      setWeights(report.weights);
+    } else if (typeof report.weights === 'string') {
+      const parsed = JSON.parse(report.weights);
+      if (Array.isArray(parsed)) {
+        setWeights(parsed);
       } else {
-        console.warn("Unknown format of weights");
+        console.warn("Parsed weights is not array.");
         setWeights([]);
       }
-    } catch (error) {
-      console.error("Error parsing weights:", error);
+    } else {
+      console.warn("Unknown format of weights");
       setWeights([]);
     }
-  }, [report?.weights]);
+  } catch (error) {
+    console.error("Error parsing weights:", error);
+    setWeights([]);
+  }
+}, [report.weights]);
 
-  useEffect(() => {
-    if (weights.length > 0) {
-      const sum = weights.reduce((acc: number, val: number) => acc + val, 0);
-      setAverage(Number((sum / weights.length).toFixed(2)));
-    }
-  }, [weights]);
+useEffect(() => {
+  if (weights.length > 0) {
+    const numericWeights = weights.map(Number); // ← key fix
+    const sum = numericWeights.reduce((acc, val) => acc + val, 0);
+    const avg = sum / numericWeights.length;
+    setAverage(Number(avg.toFixed(2)));
+  } else {
+    setAverage(0);
+  }
+}, [weights]);
+useEffect(() => {
+  console.log('report.weights:', report.weights);
+  console.log('Type of report.weights:', typeof report.weights);
+}, []);
+  
 
   return (
     <View style={styles.container}>
@@ -109,24 +129,18 @@ export default function ReportDetail() {
       <View style={styles.brickSection}>
         <Text style={styles.subsectionTitle}>🧪  {report.zone} - {report.brick_type}</Text>
 
-        {weights.length > 0 ? (
-          <FlatList
-            data={weights}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item, index }) => (
-              <View style={styles.weightCard}>
-                <Text style={styles.weightLabel}>#{index + 1}</Text>
-                <Text style={styles.weightValue}>{item} kg</Text>
-              </View>
-            )}
-          />
-        ) : (
-          <Text style={{ textAlign: 'center', color: 'red' }}>
-            Aucun poids à afficher pour ce rapport.
-          </Text>
-        )}
+        <FlatList
+          data={weights}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          keyExtractor={(_, index) => index.toString()}
+          renderItem={({ item, index }) => (
+            <View style={styles.weightCard}>
+              <Text style={styles.weightLabel}>#{index + 1}</Text>
+              <Text style={styles.weightValue}>{item} kg</Text>
+            </View>
+          )}
+        />
 
         <Text style={styles.averageText}>
           ⚖️ Poids Moyen: <Text style={styles.averageValue}>{average} kg</Text>
@@ -140,12 +154,7 @@ export default function ReportDetail() {
         <Text style={styles.buttonText}>📄 Télécharger PDF</Text>
       </TouchableOpacity>
 
-      {/* Use Pressable here with ref correctly forwarded */}
-      <Pressable
-        ref={downloadButtonRef}
-        style={styles.closeButton}
-        onPress={() => navigation.navigate('Home')}
-      >
+      <Pressable style={styles.closeButton} onPress={() => navigation.navigate('Home')}>
         <Text style={styles.buttonText}>Fermer</Text>
       </Pressable>
     </View>

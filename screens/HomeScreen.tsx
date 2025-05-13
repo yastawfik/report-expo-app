@@ -75,24 +75,26 @@ export default function HomeScreen() {
     }, [route.params?.newReport])
   );
 
-  const renderItem = ({ item }: { item: Report }) => {
-    const date = new Date(item.created_at);
-    return (
-      <View style={styles.card}>
-        <Text style={styles.name}>{item.user?.name || 'Nom Inconnu'}</Text>
+const renderItem = ({ item }: { item: Report }) => {
+  const date = new Date(item.created_at);
+  return (
+    <View style={styles.card}>
+      <Text style={styles.name}>{item.user?.name || 'Nom Inconnu'}</Text>
 
-        <View style={styles.row}>
-          <MaterialIcons name="calendar-today" size={20} color="#A45B17" />
-          <Text style={styles.text}>{date.toLocaleDateString()}</Text>
-        </View>
+      <View style={styles.row}>
+        <MaterialIcons name="calendar-today" size={20} color="#A45B17" />
+        <Text style={styles.text}>{date.toLocaleDateString()}</Text>
+      </View>
 
-        <View style={styles.row}>
-          <MaterialIcons name="access-time" size={20} color="#A45B17" />
-          <Text style={styles.text}>
-            {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </View>
+      <View style={styles.row}>
+        <MaterialIcons name="access-time" size={20} color="#A45B17" />
+        <Text style={styles.text}>
+          {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text>
+      </View>
 
+      {/* Grouped Buttons */}
+      <View style={styles.buttonGroup}>
         <TouchableOpacity
           style={styles.button}
           onPress={() => navigation.navigate('ReportDetail', { report: item })}
@@ -100,9 +102,18 @@ export default function HomeScreen() {
           <MaterialIcons name="info" size={16} color="#fff" />
           <Text style={styles.buttonText}> Voir Détails</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.editButton]}
+          onPress={() => navigation.navigate('EditReport', { report: item })}
+        >
+          <MaterialIcons name="edit" size={16} color="#fff" />
+          <Text style={styles.buttonText}> Modifier</Text>
+        </TouchableOpacity>
       </View>
-    );
-  };
+    </View>
+  );
+};
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -197,4 +208,13 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
+  buttonGroup: {
+  flexDirection: 'row',
+  marginTop: 12,
+},
+
+editButton: {
+  backgroundColor: '#FFA500', // orange
+  marginLeft: 10,
+},
 });
