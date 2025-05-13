@@ -3,7 +3,7 @@
 import axios from 'axios';
 
 // Change this to match your Laravel backend URL (use your local IP for physical device testing)
-const API_BASE_URL = 'http://192.168.0.172:8000/api'; // <-- Replace with your IP address and port
+const API_BASE_URL = 'http://192.168.103.37:8000/api'; // <-- Replace with your IP address and port
 
 const api = axios.create({
   baseURL: API_BASE_URL,

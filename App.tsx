@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function App() {
   return (
-   
+ 
     <AuthProvider>
     <NavigationContainer>
       <View style={{ flex: 1 }}>
@@ -17,6 +17,7 @@ export default function App() {
       </View>
     </NavigationContainer>
     </AuthProvider>
+
   
   );
 }

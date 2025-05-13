@@ -18,7 +18,7 @@ export default function RegisterScreen({ navigation }: any) {
     try {
       setLoading(true);
       setError('');
-      await axios.post('http://192.168.0.172:8000/api/register', {
+      await axios.post('http://192.168.103.37:8000/api/register', {
         name,
         email,
         password,

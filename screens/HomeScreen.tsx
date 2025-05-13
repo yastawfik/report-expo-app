@@ -35,7 +35,7 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       const [reportResponse, userData] = await Promise.all([ 
-        axios.get('http://192.168.1.216:8000/api/reports'),
+        axios.get('http://192.168.103.37:8000/api/reports'),
         AsyncStorage.getItem('user'),
       ]);
 
