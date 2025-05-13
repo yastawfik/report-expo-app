@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Platform, StatusBar} from 'react-native';
 import AjouterReport from '../screens/AjouterReport';
 import EditReport from '../screens/EditReport';
+import AllReportsScreen from '../screens/AllReportsScreen';
 
 
 const Stack = createStackNavigator();
@@ -32,6 +33,7 @@ export default function AppNavigation() {
       <Stack.Screen name="ReportDetail" component={ReportDetail} />
       <Stack.Screen name="ReportForm" component={ReportForm} />
       <Stack.Screen name="EditReport" component={EditReport} options={{ title: 'Modifier Rapport' }} />
+      <Stack.Screen name="AllReports" component={AllReportsScreen} />
 
     </>
   )}
