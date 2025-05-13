@@ -50,6 +50,16 @@ export default function EditScreen() {
     setAverage(Number(avg.toFixed(2)));
   }, [weights]);
 
+useEffect(() => {
+  const fieldCount = brickType === 'B8-25' ? 8 : brickType === 'B10' ? 4 : 0;
+  setWeights((prevWeights) => {
+    const updated = [...prevWeights];
+    updated.length = fieldCount;
+    return updated.map((w, i) => w || '');
+  });
+}, [brickType]);
+
+
   const handleUpdate = async () => {
     try {
       const updatedReport = {
