@@ -66,6 +66,7 @@ useEffect(() => {
         zone,
         brick_type: brickType,
         weights: weights.map(w => parseFloat(w)),
+         average_weight: average,
       };
 
       await axios.put(`http://192.168.103.37:8000/api/reports/${report.id}`, updatedReport);
