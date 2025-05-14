@@ -1,23 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  FlatList,
+  View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, FlatList, ScrollView
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Picker } from '@react-native-picker/picker';
-import { Pressable } from 'react-native-gesture-handler';
 import axios from 'axios';
-
 import { RootStackParamList, Report } from '../type';
 
-// Define route and navigation types
 type EditScreenRouteProp = RouteProp<RootStackParamList, 'EditReport'>;
 type EditScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'EditReport'>;
 
@@ -26,50 +17,64 @@ export default function EditScreen() {
   const navigation = useNavigation<EditScreenNavigationProp>();
   const { report } = route.params;
 
-  const [zone, setZone] = useState(report.zone);
-  const [brickType, setBrickType] = useState(report.brick_type);
-  const [weights, setWeights] = useState<string[]>([]);
-  const [average, setAverage] = useState(0);
+  const [subReports, setSubReports] = useState<any[]>([]);
 
   const zones = ['Séchoir', 'Zone 2', 'Zone 3'];
-  const brickTypes = ['B8-25', 'B10'];
+  const brickTypes = ['B8-25', 'B10', 'B12'];
 
   useEffect(() => {
-    try {
-      const parsed = typeof report.weights === 'string' ? JSON.parse(report.weights) : report.weights;
-      const stringWeights = parsed.map((w: number) => w.toString());
-      setWeights(stringWeights);
-    } catch {
-      setWeights([]);
+    if (report.subreports) {
+      const parsed = report.subreports.map((sub: any) => {
+        let weights = [];
+        try {
+          weights = typeof sub.weights === 'string' ? JSON.parse(sub.weights) : sub.weights;
+        } catch {
+          weights = [];
+        }
+        return {
+          id: sub.id,
+          zone: sub.zone,
+          brick_type: sub.brick_type,
+          weights: weights.map((w: number) => w.toString()),
+          average_weight: sub.average_weight,
+        };
+      });
+      setSubReports(parsed);
     }
   }, []);
 
-  useEffect(() => {
+  const calculateAverage = (weights: string[]) => {
     const numeric = weights.map(w => parseFloat(w)).filter(w => !isNaN(w));
     const avg = numeric.reduce((acc, cur) => acc + cur, 0) / (numeric.length || 1);
-    setAverage(Number(avg.toFixed(2)));
-  }, [weights]);
+    return Number(avg.toFixed(2));
+  };
 
-useEffect(() => {
-  const fieldCount = brickType === 'B8-25' ? 8 : brickType === 'B10' ? 4 : 0;
-  setWeights((prevWeights) => {
-    const updated = [...prevWeights];
-    updated.length = fieldCount;
-    return updated.map((w, i) => w || '');
-  });
-}, [brickType]);
+  const handleWeightChange = (index: number, weightIndex: number, value: string) => {
+    const updated = [...subReports];
+    updated[index].weights[weightIndex] = value;
+    updated[index].average_weight = calculateAverage(updated[index].weights);
+    setSubReports(updated);
+  };
 
+  const handleBrickTypeChange = (index: number, value: string) => {
+    const fieldCount = value === 'B8-25' ? 8 : value === 'B10' ? 4 : value === 'B12' ? 6 : 0;
+    const updated = [...subReports];
+    updated[index].brick_type = value;
+    updated[index].weights = Array(fieldCount).fill('');
+    updated[index].average_weight = 0;
+    setSubReports(updated);
+  };
 
   const handleUpdate = async () => {
     try {
-      const updatedReport = {
-        zone,
-        brick_type: brickType,
-        weights: weights.map(w => parseFloat(w)),
-         average_weight: average,
-      };
-
-      await axios.put(`http://192.168.103.37:8000/api/reports/${report.id}`, updatedReport);
+      for (let sub of subReports) {
+        await axios.put(`http://192.168.103.50:8000/api/reports/${sub.id}`, {
+          zone: sub.zone,
+          brick_type: sub.brick_type,
+          weights: sub.weights.map((w: string) => parseFloat(w)),
+          average_weight: sub.average_weight,
+        });
+      }
       Alert.alert('Succès', 'Rapport mis à jour.');
       navigation.goBack();
     } catch (error) {
@@ -79,70 +84,74 @@ useEffect(() => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text style={styles.header}>Modifier le Rapport</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>📅 Date: {report.created_at.split('T')[0]}</Text>
-        <Text style={styles.label}>👤 Fait Par: {report?.user?.name || 'Inconnu'}</Text>
+      <Text style={styles.label}>📅 Date: {report.created_at.split('T')[0]}</Text>
+      <Text style={styles.label}>👤 Fait Par: {report?.user?.name || 'Inconnu'}</Text>
 
-        <Picker
-          selectedValue={zone}
-          onValueChange={setZone}
-          style={styles.input}
-        >
-          {zones.map((zoneOption, index) => (
-            <Picker.Item key={index} label={zoneOption} value={zoneOption} />
-          ))}
-        </Picker>
+      {subReports.map((sub, index) => (
+        <View key={index} style={styles.subCard}>
+          <Text style={styles.subTitle}>🧱 Zone {index + 1}</Text>
 
-        <Picker
-          selectedValue={brickType}
-          onValueChange={setBrickType}
-          style={styles.input}
-        >
-          {brickTypes.map((typeOption, index) => (
-            <Picker.Item key={index} label={typeOption} value={typeOption} />
-          ))}
-        </Picker>
-      </View>
-
-      <Text style={styles.sectionTitle}>Modifier les Poids</Text>
-
-      <FlatList
-        data={weights}
-        keyExtractor={(_, index) => index.toString()}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        renderItem={({ item, index }) => (
-          <TextInput
-            style={styles.weightInput}
-            value={item}
-            onChangeText={text => {
-              const updated = [...weights];
-              updated[index] = text;
-              setWeights(updated);
+          <Picker
+            selectedValue={sub.zone}
+            onValueChange={(value) => {
+              const updated = [...subReports];
+              updated[index].zone = value;
+              setSubReports(updated);
             }}
-            keyboardType="numeric"
-          />
-        )}
-      />
+            style={styles.input}
+          >
+            {zones.map((zone, idx) => (
+              <Picker.Item key={idx} label={zone} value={zone} />
+            ))}
+          </Picker>
 
-      <Text style={styles.averageText}>
-        ⚖️ Nouveau Poids Moyen: <Text style={styles.averageValue}>{average} kg</Text>
-      </Text>
+          <Picker
+            selectedValue={sub.brick_type}
+            onValueChange={(value) => handleBrickTypeChange(index, value)}
+            style={styles.input}
+          >
+            {brickTypes.map((type, idx) => (
+              <Picker.Item key={idx} label={type} value={type} />
+            ))}
+          </Picker>
+
+          <Text style={styles.sectionTitle}>Modifier les Poids</Text>
+
+          <FlatList
+            data={sub.weights}
+            keyExtractor={(_, i) => i.toString()}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            renderItem={({ item, index: weightIndex }) => (
+              <TextInput
+                style={styles.weightInput}
+                value={item}
+                onChangeText={(text) => handleWeightChange(index, weightIndex, text)}
+                keyboardType="numeric"
+              />
+            )}
+          />
+
+          <Text style={styles.averageText}>
+            ⚖️ Nouveau Poids Moyen: <Text style={styles.averageValue}>{sub.average_weight} kg</Text>
+          </Text>
+        </View>
+      ))}
 
       <TouchableOpacity style={styles.saveButton} onPress={handleUpdate}>
         <Text style={styles.buttonText}>💾 Enregistrer</Text>
       </TouchableOpacity>
 
-      <Pressable
+      <TouchableOpacity
         style={styles.closeButton}
         onPress={() => navigation.navigate('Home')}
       >
         <Text style={styles.buttonText}>Fermer</Text>
-      </Pressable>
-    </View>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
@@ -158,16 +167,22 @@ const styles = StyleSheet.create({
     color: '#A45B17',
     marginBottom: 10,
   },
-  card: {
+  label: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 5,
+  },
+  subCard: {
     backgroundColor: '#F8EDE3',
     borderRadius: 10,
     padding: 15,
     marginBottom: 20,
   },
-  label: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 5,
+  subTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#A45B17',
   },
   input: {
     backgroundColor: '#FFF',
@@ -176,11 +191,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginTop: 10,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 5,
     color: '#A45B17',
   },
   row: {
@@ -196,32 +213,30 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   averageText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#333',
-    marginTop: 10,
-    marginBottom: 5,
+    marginTop: 5,
   },
   averageValue: {
     fontWeight: 'bold',
     color: '#A45B17',
   },
   saveButton: {
-    marginTop: 20,
     backgroundColor: '#A45B17',
-    padding: 12,
+    padding: 15,
     borderRadius: 25,
     alignItems: 'center',
+    marginTop: 10,
+  },
+  closeButton: {
+    backgroundColor: '#7a0012',
+    padding: 15,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginTop: 15,
   },
   buttonText: {
     color: '#FFF',
     fontWeight: 'bold',
-  },
-  closeButton: {
-    marginTop: 15,
-    backgroundColor: '#7a0012',
-    padding: 12,
-    borderRadius: 25,
-    alignItems: 'center',
   },
 });

@@ -22,99 +22,116 @@ const brickTypeFields = {
 };
 
 type BrickType = keyof typeof brickTypeFields;
+type SubReport = {
+  zone: string | null;
+  brickType: BrickType | null;
+  brickWeights: string[];
+  averageWeight: string;
+};
+
 const zones = ['Séchoir', 'Zone 2', 'Zone 3'];
 const shifts = ['7-15', '15-23', '23-7'];
 
 const AjouterReport = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  const [zone, setZone] = useState<string | null>(null);
-  const [brickType, setBrickType] = useState<BrickType | null>(null);
-  const [brickWeights, setBrickWeights] = useState<string[]>([]);
-  const [averageWeight, setAverageWeight] = useState('');
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
   const [shift, setShift] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [zoneForms, setZoneForms] = useState<SubReport[]>([]);
 
-  useEffect(() => {
-    if (brickType) {
-      setBrickWeights(Array(brickTypeFields[brickType]).fill(''));
+  const handleAddZoneForm = () => {
+    if (zoneForms.length >= 3) return;
+    setZoneForms([...zoneForms, { zone: null, brickType: null, brickWeights: [], averageWeight: '' }]);
+  };
+
+  const handleZoneSelect = (index: number, zone: string) => {
+    const updated = [...zoneForms];
+    updated[index].zone = zone;
+    setZoneForms(updated);
+  };
+
+  const handleBrickTypeSelect = (index: number, type: BrickType) => {
+    const updated = [...zoneForms];
+    updated[index].brickType = type;
+    updated[index].brickWeights = Array(brickTypeFields[type]).fill('');
+    setZoneForms(updated);
+  };
+
+  const handleWeightChange = (formIndex: number, weightIndex: number, value: string) => {
+    const updated = [...zoneForms];
+    updated[formIndex].brickWeights[weightIndex] = value;
+    const validWeights = updated[formIndex].brickWeights.filter(w => w.trim() !== '' && !isNaN(Number(w)));
+    if (validWeights.length === updated[formIndex].brickWeights.length) {
+      const sum = updated[formIndex].brickWeights.reduce((acc, w) => acc + parseFloat(w), 0);
+      updated[formIndex].averageWeight = (sum / validWeights.length).toFixed(2);
     } else {
-      setBrickWeights([]);
+      updated[formIndex].averageWeight = '';
     }
-  }, [brickType]);
-
-  useEffect(() => {
-    if (brickWeights.every((w) => w.trim() !== '' && !isNaN(Number(w)))) {
-      calculateAverageWeight();
-    } else {
-      setAverageWeight('');
-    }
-  }, [brickWeights]);
-
-  const handleWeightChange = (text: string, index: number) => {
-    const updated = [...brickWeights];
-    updated[index] = text;
-    setBrickWeights(updated);
+    setZoneForms(updated);
   };
 
-  const calculateAverageWeight = () => {
-    const sum = brickWeights.reduce((acc, w) => acc + parseFloat(w || '0'), 0);
-    setAverageWeight((sum / brickWeights.length).toFixed(2));
-  };
+ const handleSubmit = async () => {
+  if (!shift) {
+    Alert.alert('Erreur', 'Veuillez sélectionner un shift.');
+    return;
+  }
 
- const isFormValid =
-  shift !== '' &&
-  zone !== '' &&
-  brickType !== null &&
-  brickWeights.every((w) => w.trim() !== '' && !isNaN(Number(w)));
+  if (zoneForms.length === 0) {
+    Alert.alert('Erreur', 'Veuillez ajouter au moins une zone.');
+    return;
+  }
 
+  const incomplete = zoneForms.some(
+    (form) =>
+      !form.zone ||
+      !form.brickType ||
+      form.brickWeights.some((w) => w.trim() === '' || isNaN(Number(w))) ||
+      isNaN(Number(form.averageWeight))
+  );
 
-  const handleSubmit = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert('Erreur', 'Utilisateur non authentifié');
-        return;
-      }
+  if (incomplete) {
+    Alert.alert('Erreur', 'Veuillez remplir tous les champs correctement.');
+    return;
+  }
 
-      const datetime = new Date(date);
-      datetime.setHours(time.getHours());
-      datetime.setMinutes(time.getMinutes());
-
-      const payload = {
-        zone,
-        brick_type: brickType,
-        weights: brickWeights,
-        average_weight: averageWeight,
-        datetime: datetime.toISOString(),
-        shift,
-      };
-
-      const response = await axios.post('http://192.168.103.37:8000/api/reports', payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const newReport = response.data;
-      navigation.navigate('Home', { newReport });
-
-      setTimeout(() => {
-        Alert.alert('Succès', 'Rapport enregistré avec succès');
-      }, 500);
-    } catch (err: any) {
-      console.error(err.response?.data || err.message);
-      Alert.alert('Erreur', 'Échec de l\'enregistrement du rapport');
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      Alert.alert('Erreur', 'Utilisateur non authentifié');
+      return;
     }
-  };
-  
+
+    const subreports = zoneForms.map((form) => ({
+      zone: form.zone,
+      brick_type: form.brickType,
+      weights: form.brickWeights.map(w => parseFloat(w)),
+      average_weight: parseFloat(form.averageWeight.toString()),
+    }));
+
+    const payload = {
+      shift,
+      datetime: date.toISOString(),
+      subreports,
+    };
+
+    const response = await axios.post('http://192.168.103.50:8000/api/reports', payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    navigation.navigate('Home', { newReport: response.data });
+    Alert.alert('Succès', 'Rapport enregistré avec succès.');
+  } catch (err: any) {
+    console.error(err.response?.data || err.message);
+    Alert.alert('Erreur', 'Échec de l\'enregistrement du rapport');
+  }
+};
+  const usedZones = zoneForms.map((f) => f.zone).filter(Boolean);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Date */}
+      {/* DATE & TIME */}
       <View style={styles.section}>
         <Text style={styles.label}>Date</Text>
         <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputBox}>
@@ -124,37 +141,34 @@ const AjouterReport = () => {
           <DateTimePicker
             value={date}
             mode="date"
-            display="calendar"
-            onChange={(_, selected) => {
+            display="default"
+            onChange={(_, selectedDate) => {
               setShowDatePicker(false);
-              if (selected) setDate(selected);
+              if (selectedDate) setDate(selectedDate);
             }}
           />
         )}
       </View>
 
-      {/* Heure */}
       <View style={styles.section}>
         <Text style={styles.label}>Heure</Text>
         <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.inputBox}>
-          <Text>
-            {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
+          <Text>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
         </TouchableOpacity>
         {showTimePicker && (
           <DateTimePicker
             value={time}
             mode="time"
-            display="clock"
-            onChange={(_, selected) => {
+            display="default"
+            onChange={(_, selectedTime) => {
               setShowTimePicker(false);
-              if (selected) setTime(selected);
+              if (selectedTime) setTime(selectedTime);
             }}
           />
         )}
       </View>
 
-      {/* Shift */}
+      {/* SHIFT */}
       <View style={styles.section}>
         <Text style={styles.label}>Shift</Text>
         <View style={styles.zoneButtonsContainer}>
@@ -170,75 +184,79 @@ const AjouterReport = () => {
         </View>
       </View>
 
-      {/* Zone (only show if shift is selected) */}
-      {shift && (
-        <View style={styles.section}>
-          <Text style={styles.label}>Zone</Text>
+      {/* SUBREPORTS */}
+      {zoneForms.map((form, index) => (
+        <View key={index} style={[styles.section, { borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 20 }]}>
+          <Text style={styles.label}>Zone {index + 1}</Text>
           <View style={styles.zoneButtonsContainer}>
-            {zones.map((z) => (
-              <TouchableOpacity
-                key={z}
-                style={[styles.zoneButton, zone === z && styles.selectedButton]}
-                onPress={() => setZone(z)}
-              >
-                <Text style={styles.zoneButtonText}>{z}</Text>
-              </TouchableOpacity>
-            ))}
+            {zones.map((z) => {
+              const isDisabled = usedZones.includes(z) && form.zone !== z;
+              return (
+                <TouchableOpacity
+                  key={z}
+                  style={[
+                    styles.zoneButton,
+                    form.zone === z && styles.selectedButton,
+                    isDisabled && { opacity: 0.4 },
+                  ]}
+                  onPress={() => !isDisabled && handleZoneSelect(index, z)}
+                  disabled={isDisabled}
+                >
+                  <Text style={styles.zoneButtonText}>{z}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        </View>
-      )}
 
-      {/* Type de Briques (only show if shift is selected) */}
-      {shift && (
-        <View style={styles.section}>
           <Text style={styles.label}>Type de Briques</Text>
           <View style={styles.zoneButtonsContainer}>
             {Object.keys(brickTypeFields).map((type) => (
               <TouchableOpacity
                 key={type}
-                style={[styles.zoneButton, brickType === type && styles.selectedButton]}
-                onPress={() => setBrickType(type as BrickType)}
+                style={[styles.zoneButton, form.brickType === type && styles.selectedButton]}
+                onPress={() => handleBrickTypeSelect(index, type as BrickType)}
               >
                 <Text style={styles.zoneButtonText}>{type}</Text>
               </TouchableOpacity>
             ))}
           </View>
+
+          {form.brickType && (
+            <>
+              <Text style={styles.label}>Poids des briques (kg)</Text>
+              {form.brickWeights.map((w, i) => (
+                <TextInput
+                  key={i}
+                  style={styles.input}
+                  keyboardType="numeric"
+                  placeholder={`Poids ${i + 1}`}
+                  value={w}
+                  onChangeText={(t) => handleWeightChange(index, i, t)}
+                />
+              ))}
+              <Text style={styles.average}>Poids Moyen: {form.averageWeight || '0'} kg</Text>
+            </>
+          )}
         </View>
+      ))}
+
+      {/* ADD NEW ZONE */}
+      {zoneForms.length < 3 && (
+        <TouchableOpacity onPress={handleAddZoneForm} style={styles.plusButton}>
+          <Text style={styles.plusButtonText}>＋</Text>
+        </TouchableOpacity>
       )}
 
-      {/* Poids fields (only show if brickType is selected) */}
-      {brickType && (
-        <View style={styles.section}>
-          <Text style={styles.label}>Poids des briques (kg)</Text>
-          {brickWeights.map((w, i) => (
-            <TextInput
-              key={i}
-              style={styles.input}
-              keyboardType="numeric"
-              placeholder={`Poids ${i + 1}`}
-              value={w}
-              onChangeText={(t) => handleWeightChange(t, i)}
-            />
-          ))}
-        </View>
-      )}
-
-      {/* Always visible */}
-      <Text style={styles.average}>Poids Moyen: {averageWeight || '0'} kg</Text>
-
-      <TouchableOpacity
-      onPress={handleSubmit}
-    style={[styles.saveButton, !isFormValid && styles.disabledButton]}
-    disabled={!isFormValid}
->
-  <Text style={styles.saveButtonText}>Enregistrer</Text>
-</TouchableOpacity>
+      {/* SUBMIT */}
+      <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
+        <Text style={styles.saveButtonText}>Enregistrer</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#fff', flexGrow: 1, paddingBottom: 30 },
+  container: { padding: 20, backgroundColor: '#fff', flexGrow: 1 },
   section: { marginBottom: 20 },
   label: { fontSize: 16, fontWeight: '600', marginBottom: 6 },
   zoneButtonsContainer: {
@@ -256,13 +274,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 5,
   },
-  selectedButton: {
-    backgroundColor: '#A45B17',
-  },
-  zoneButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
+  selectedButton: { backgroundColor: '#A45B17' },
+  zoneButtonText: { fontSize: 16, color: '#333' },
   inputBox: {
     padding: 12,
     backgroundColor: '#eee',
@@ -280,7 +293,7 @@ const styles = StyleSheet.create({
   average: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginVertical: 20,
+    marginVertical: 10,
     color: '#333',
     textAlign: 'center',
   },
@@ -291,15 +304,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  saveButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  saveButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  plusButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#A45B17',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginVertical: 20,
   },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
-  
+  plusButtonText: { color: 'white', fontSize: 30, fontWeight: 'bold' },
 });
 
 export default AjouterReport;
