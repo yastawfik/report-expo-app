@@ -12,31 +12,38 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from '../type'; 
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'; // <-- Import the types
+import { RootStackParamList } from '../type';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const brickTypeFields = {
   'B8-25': 8,
   B10: 4,
+  B12: 6,
 };
 
 type BrickType = keyof typeof brickTypeFields;
 const zones = ['Séchoir', 'Zone 2', 'Zone 3'];
+const shifts = ['7-15', '15-23', '23-7'];
 
 const AjouterReport = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();  // <-- Provide the type here
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [zone, setZone] = useState(zones[0]);
-  const [brickType, setBrickType] = useState<BrickType>('B8-25');
-  const [brickWeights, setBrickWeights] = useState(Array(brickTypeFields['B8-25']).fill(''));
+  const [zone, setZone] = useState<string | null>(null);
+  const [brickType, setBrickType] = useState<BrickType | null>(null);
+  const [brickWeights, setBrickWeights] = useState<string[]>([]);
   const [averageWeight, setAverageWeight] = useState('');
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
+  const [shift, setShift] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   useEffect(() => {
-    setBrickWeights(Array(brickTypeFields[brickType]).fill(''));
+    if (brickType) {
+      setBrickWeights(Array(brickTypeFields[brickType]).fill(''));
+    } else {
+      setBrickWeights([]);
+    }
   }, [brickType]);
 
   useEffect(() => {
@@ -58,54 +65,56 @@ const AjouterReport = () => {
     setAverageWeight((sum / brickWeights.length).toFixed(2));
   };
 
-  const isFormValid = brickWeights.every((w) => w.trim() !== '' && !isNaN(Number(w)));
+ const isFormValid =
+  shift !== '' &&
+  zone !== '' &&
+  brickType !== null &&
+  brickWeights.every((w) => w.trim() !== '' && !isNaN(Number(w)));
 
-// After the report is successfully added
-const handleSubmit = async () => {
-  try {
-    const token = await AsyncStorage.getItem('token');
-    if (!token) {
-      Alert.alert('Erreur', 'Utilisateur non authentifié');
-      return;
+
+  const handleSubmit = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Erreur', 'Utilisateur non authentifié');
+        return;
+      }
+
+      const datetime = new Date(date);
+      datetime.setHours(time.getHours());
+      datetime.setMinutes(time.getMinutes());
+
+      const payload = {
+        zone,
+        brick_type: brickType,
+        weights: brickWeights,
+        average_weight: averageWeight,
+        datetime: datetime.toISOString(),
+        shift,
+      };
+
+      const response = await axios.post('http://192.168.103.37:8000/api/reports', payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const newReport = response.data;
+      navigation.navigate('Home', { newReport });
+
+      setTimeout(() => {
+        Alert.alert('Succès', 'Rapport enregistré avec succès');
+      }, 500);
+    } catch (err: any) {
+      console.error(err.response?.data || err.message);
+      Alert.alert('Erreur', 'Échec de l\'enregistrement du rapport');
     }
-
-    const datetime = new Date(date);
-    datetime.setHours(time.getHours());
-    datetime.setMinutes(time.getMinutes());
-
-    const payload = {
-      zone,
-      brick_type: brickType,
-      weights: brickWeights,
-      average_weight: averageWeight,
-      datetime: datetime.toISOString(),
-    };
-
-    // Make the request and wait for the backend to return the saved report
-    const response = await axios.post('http://192.168.103.37:8000/api/reports', payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const newReport = response.data;
-
-    // Navigate back to Home screen *before* showing the alert
-    navigation.navigate('Home', { newReport });
-
-    // Optional: wait briefly before showing the success message
-    setTimeout(() => {
-      Alert.alert('Succès', 'Rapport enregistré avec succès');
-    }, 500);
-  } catch (err: any) {
-    console.error(err.response?.data || err.message);
-    Alert.alert('Erreur', 'Échec de l\'enregistrement du rapport');
-  }
-};
+  };
+  
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Date Picker */}
+      {/* Date */}
       <View style={styles.section}>
         <Text style={styles.label}>Date</Text>
         <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputBox}>
@@ -124,7 +133,7 @@ const handleSubmit = async () => {
         )}
       </View>
 
-      {/* Time Picker */}
+      {/* Heure */}
       <View style={styles.section}>
         <Text style={styles.label}>Heure</Text>
         <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.inputBox}>
@@ -145,63 +154,85 @@ const handleSubmit = async () => {
         )}
       </View>
 
-      {/* Zone Selection */}
+      {/* Shift */}
       <View style={styles.section}>
-        <Text style={styles.label}>Zone</Text>
+        <Text style={styles.label}>Shift</Text>
         <View style={styles.zoneButtonsContainer}>
-          {zones.map((z) => (
+          {shifts.map((s) => (
             <TouchableOpacity
-              key={z}
-              style={[styles.zoneButton, zone === z && styles.selectedButton]}
-              onPress={() => setZone(z)}
+              key={s}
+              style={[styles.zoneButton, shift === s && styles.selectedButton]}
+              onPress={() => setShift(s)}
             >
-              <Text style={styles.zoneButtonText}>{z}</Text>
+              <Text style={styles.zoneButtonText}>{s}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
-      {/* Type de Briques */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Type de Briques</Text>
-        <View style={styles.zoneButtonsContainer}>
-          {Object.keys(brickTypeFields).map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[styles.zoneButton, brickType === type && styles.selectedButton]}
-              onPress={() => setBrickType(type as BrickType)}
-            >
-              <Text style={styles.zoneButtonText}>{type}</Text>
-            </TouchableOpacity>
+      {/* Zone (only show if shift is selected) */}
+      {shift && (
+        <View style={styles.section}>
+          <Text style={styles.label}>Zone</Text>
+          <View style={styles.zoneButtonsContainer}>
+            {zones.map((z) => (
+              <TouchableOpacity
+                key={z}
+                style={[styles.zoneButton, zone === z && styles.selectedButton]}
+                onPress={() => setZone(z)}
+              >
+                <Text style={styles.zoneButtonText}>{z}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Type de Briques (only show if shift is selected) */}
+      {shift && (
+        <View style={styles.section}>
+          <Text style={styles.label}>Type de Briques</Text>
+          <View style={styles.zoneButtonsContainer}>
+            {Object.keys(brickTypeFields).map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[styles.zoneButton, brickType === type && styles.selectedButton]}
+                onPress={() => setBrickType(type as BrickType)}
+              >
+                <Text style={styles.zoneButtonText}>{type}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Poids fields (only show if brickType is selected) */}
+      {brickType && (
+        <View style={styles.section}>
+          <Text style={styles.label}>Poids des briques (kg)</Text>
+          {brickWeights.map((w, i) => (
+            <TextInput
+              key={i}
+              style={styles.input}
+              keyboardType="numeric"
+              placeholder={`Poids ${i + 1}`}
+              value={w}
+              onChangeText={(t) => handleWeightChange(t, i)}
+            />
           ))}
         </View>
-      </View>
+      )}
 
-      {/* Brick Weights */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Poids des briques (kg)</Text>
-        {brickWeights.map((w, i) => (
-          <TextInput
-            key={i}
-            style={styles.input}
-            keyboardType="numeric"
-            placeholder={`Poids ${i + 1}`}
-            value={w}
-            onChangeText={(t) => handleWeightChange(t, i)}
-          />
-        ))}
-      </View>
+      {/* Always visible */}
+      <Text style={styles.average}>Poids Moyen: {averageWeight || '0'} kg</Text>
 
-      <Text style={styles.average}>Poids Moyen: {averageWeight || '–'} kg</Text>
-
-      {/* Submit */}
       <TouchableOpacity
-        onPress={handleSubmit}
-        style={[styles.saveButton, !isFormValid && styles.disabledButton]}
-        disabled={!isFormValid}
-      >
-        <Text style={styles.saveButtonText}>Enregistrer</Text>
-      </TouchableOpacity>
+      onPress={handleSubmit}
+    style={[styles.saveButton, !isFormValid && styles.disabledButton]}
+    disabled={!isFormValid}
+>
+  <Text style={styles.saveButtonText}>Enregistrer</Text>
+</TouchableOpacity>
     </ScrollView>
   );
 };
@@ -268,6 +299,7 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: '#ccc',
   },
+  
 });
 
 export default AjouterReport;

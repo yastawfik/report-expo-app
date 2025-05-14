@@ -121,7 +121,10 @@ useEffect(() => {
         </Text>
         <Text style={styles.label}>
           👤 Fait Par: <Text style={styles.value}>{report?.user?.name || 'Inconnu'}</Text>
-        </Text>
+        </Text> 
+       <Text style={styles.label}>
+    👷‍♂️ Shift: <Text style={styles.value}>{report?.shift || 'Inconnu'}</Text>
+  </Text>
       </View>
 
       <Text style={styles.sectionTitle}>Liste des Poids des briques</Text>
