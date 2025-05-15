@@ -6,6 +6,8 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Report } from '../type';
@@ -25,6 +27,10 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  // For custom delete confirmation modal
+  const [modalVisible, setModalVisible] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState<number | null>(null);
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
@@ -34,8 +40,8 @@ export default function HomeScreen() {
   const fetchReportsAndUser = async () => {
     try {
       setLoading(true);
-      const [reportResponse, userData] = await Promise.all([ 
-        axios.get('http://192.168.103.50:8000/api/reports'),
+      const [reportResponse, userData] = await Promise.all([
+        axios.get('http://192.168.103.41:8000/api/reports'),
         AsyncStorage.getItem('user'),
       ]);
 
@@ -51,8 +57,8 @@ export default function HomeScreen() {
       const data = reportResponse.data as { data: Report[] };
       const allReports: Report[] = Array.isArray(data.data) ? data.data : [];
       const userReports = allReports
-      .filter((report) => report.user_id === user.id)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        .filter((report) => report.user_id === user.id)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setReports(userReports);
     } catch (error) {
@@ -63,57 +69,85 @@ export default function HomeScreen() {
     }
   };
 
-  // Use useFocusEffect to fetch reports each time the screen is focused
+  // Show modal to confirm delete
+  const confirmDeleteReport = (id: number) => {
+    setReportToDelete(id);
+    setModalVisible(true);
+  };
+
+  // Actually delete report
+  const handleDeleteConfirmed = async () => {
+    if (reportToDelete === null) return;
+
+    try {
+      const response = await axios.delete(`http://192.168.103.41:8000/api/reports/${reportToDelete}`);
+      console.log('✅ Report deleted from backend:', response.data);
+      setReports((prev) => prev.filter((r) => r.id !== reportToDelete));
+    } catch (error: any) {
+      console.error('❌ Delete error:', error?.response || error.message || error);
+      // Optional: add some feedback for user here
+    } finally {
+      setModalVisible(false);
+      setReportToDelete(null);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchReportsAndUser();
-      
-      // Clear newReport param after fetching
+
       if (route.params?.newReport) {
         navigation.setParams({ newReport: null });
       }
     }, [route.params?.newReport])
   );
 
-const renderItem = ({ item }: { item: Report }) => {
-  const date = new Date(item.created_at);
-  return (
-    <View style={styles.card}>
-      <Text style={styles.name}>{item.user?.name || 'Nom Inconnu'}</Text>
+  const renderItem = ({ item }: { item: Report }) => {
+    const date = new Date(item.created_at);
+    return (
+      <View style={styles.card}>
+        <Text style={styles.name}>{item.user?.name || 'Nom Inconnu'}</Text>
 
-      <View style={styles.row}>
-        <MaterialIcons name="calendar-today" size={20} color="#A45B17" />
-        <Text style={styles.text}>{date.toLocaleDateString()}</Text>
+        <View style={styles.row}>
+          <MaterialIcons name="calendar-today" size={20} color="#A45B17" />
+          <Text style={styles.text}>{date.toLocaleDateString()}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <MaterialIcons name="access-time" size={20} color="#A45B17" />
+          <Text style={styles.text}>
+            {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+        </View>
+
+        <View style={styles.buttonGroup}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('ReportDetail', { report: item })}
+          >
+            <MaterialIcons name="info" size={16} color="#fff" />
+            <Text style={styles.buttonText}> Voir Détails</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.editButton]}
+            onPress={() => navigation.navigate('EditReport', { report: item })}
+          >
+            <MaterialIcons name="edit" size={16} color="#fff" />
+            <Text style={styles.buttonText}> Modifier</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.deleteButton]}
+            onPress={() => confirmDeleteReport(item.id)}
+          >
+            <MaterialIcons name="delete" size={16} color="#fff" />
+            <Text style={styles.buttonText}> Supprimer</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <View style={styles.row}>
-        <MaterialIcons name="access-time" size={20} color="#A45B17" />
-        <Text style={styles.text}>
-          {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </View>
-
-      {/* Grouped Buttons */}
-      <View style={styles.buttonGroup}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('ReportDetail', { report: item })}
-        >
-          <MaterialIcons name="info" size={16} color="#fff" />
-          <Text style={styles.buttonText}> Voir Détails</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.editButton]}
-          onPress={() => navigation.navigate('EditReport', { report: item })}
-        >
-          <MaterialIcons name="edit" size={16} color="#fff" />
-          <Text style={styles.buttonText}> Modifier</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -127,9 +161,7 @@ const renderItem = ({ item }: { item: Report }) => {
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Aucun rapport trouvé.</Text>
-          }
+          ListEmptyComponent={<Text style={styles.emptyText}>Aucun rapport trouvé.</Text>}
         />
       )}
 
@@ -139,6 +171,37 @@ const renderItem = ({ item }: { item: Report }) => {
       >
         <MaterialIcons name="add-circle" size={56} color="#A45B17" />
       </TouchableOpacity>
+
+      {/* Custom confirmation modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirmer la suppression</Text>
+            <Text style={styles.modalMessage}>Êtes-vous sûr de vouloir supprimer ce rapport ?</Text>
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Annuler</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.modalButton, styles.deleteConfirmButton]}
+                onPress={handleDeleteConfirmed}
+              >
+                <Text style={[styles.modalButtonText, { color: 'white' }]}>Supprimer</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -209,12 +272,62 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonGroup: {
-  flexDirection: 'row',
-  marginTop: 12,
-},
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginTop: 12,
+    flexWrap: 'wrap',
+  },
+  editButton: {
+    backgroundColor: '#f0a500',
+    marginLeft: 8,
+  },
+  deleteButton: {
+    backgroundColor: '#d9534f',
+    marginLeft: 8,
+  },
 
-editButton: {
-  backgroundColor: '#FFA500', // orange
-  marginLeft: 10,
-},
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  modalButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginLeft: 12,
+  },
+  cancelButton: {
+    backgroundColor: '#ddd',
+  },
+  deleteConfirmButton: {
+    backgroundColor: '#d9534f',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

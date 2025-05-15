@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,20 +7,21 @@ import {
   Alert,
   FlatList,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from '../type';
+import { RootStackParamList, SubReport } from '../type';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Pressable } from 'react-native-gesture-handler';
-import { useEffect } from 'react';
+import axios from 'axios';
 
 type ReportDetailRouteProp = RouteProp<RootStackParamList, 'ReportDetail'>;
 
 const downloadReportPdf = async (reportId: number) => {
   try {
-    const downloadUrl = `http://192.168.103.50:8000/reports/${reportId}/download`;
+    const downloadUrl = `http://192.168.103.41:8000/reports/${reportId}/download`;
 
     if (Platform.OS === 'web') {
       const link = document.createElement('a');
@@ -53,11 +54,40 @@ const downloadReportPdf = async (reportId: number) => {
 };
 
 export default function ReportDetail() {
-  const { params: { report } } = useRoute<ReportDetailRouteProp>();
+  const { params: { report: initialReport } } = useRoute<ReportDetailRouteProp>();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const [report, setReport] = useState<any>(initialReport);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-  console.log('Report Data:', report); // Log report data
-}, [report])
+    const fetchFullReport = async () => {
+      try {
+        const response = await axios.get(`http://192.168.103.41:8000/api/reports/${initialReport.id}`);
+        setReport(response.data);
+        console.log('API response data:', response.data);
+      } catch (error) {
+        console.error('Failed to fetch full report:', error);
+        Alert.alert('Erreur', 'Impossible de charger le rapport complet.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFullReport();
+  }, [initialReport.id]);
+  useEffect(() => {
+  console.log('Full Report:', report);
+  console.log('Subreports:', report.subreports);
+}, [report]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#A45B17" />
+        <Text style={{ marginTop: 10 }}>Chargement du rapport...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -81,7 +111,7 @@ export default function ReportDetail() {
       <Text style={styles.sectionTitle}>Liste des Poids des briques</Text>
 
       {Array.isArray(report.subreports) && report.subreports.length > 0 ? (
-        report.subreports.map((sub, subIndex) => {
+        report.subreports.map((sub:SubReport) => {
           let parsedWeights: number[] = [];
 
           try {
@@ -92,7 +122,7 @@ export default function ReportDetail() {
               if (Array.isArray(parsed)) parsedWeights = parsed.map(Number);
             }
           } catch (err) {
-            console.warn('Error parsing weights for subreport', subIndex, err);
+            console.warn('Error parsing weights for subreport', sub.id, err);
           }
 
           const average =
@@ -101,16 +131,20 @@ export default function ReportDetail() {
               : 0;
 
           return (
-            <View key={subIndex} style={styles.brickSection}>
+            <View key={sub.id} style={styles.brickSection}>
               <Text style={styles.subsectionTitle}>
-                🧪 {sub.zone} - {sub.brick_type}
+                🧪 {sub.zone || 'N/A'} - {sub.brick_type || 'N/A'}
+              </Text>
+
+              <Text style={styles.label}>
+                🗓️ Date: <Text style={styles.value}>{sub.datetime?.split('T')[0] || 'N/A'}</Text>
               </Text>
 
               <FlatList
                 data={parsedWeights}
                 numColumns={2}
                 columnWrapperStyle={styles.row}
-                keyExtractor={(_, index) => `sub-${subIndex}-${index}`}
+                keyExtractor={(_, index) => `${sub.id}-${index}`}
                 renderItem={({ item, index }) => (
                   <View style={styles.weightCard}>
                     <Text style={styles.weightLabel}>#{index + 1}</Text>

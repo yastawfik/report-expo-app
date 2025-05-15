@@ -20,7 +20,7 @@ export default function AllReportsScreen() {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const response = await axios.get<Report[]>('http://192.168.103.50:8000/api/reports/all');
+        const response = await axios.get<Report[]>('http://192.168.103.41:8000/api/reports/all');
         setReports(response.data);
       } catch (error) {
         Alert.alert('Erreur', 'Échec du chargement des rapports');

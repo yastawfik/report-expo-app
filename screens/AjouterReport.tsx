@@ -112,11 +112,11 @@ const AjouterReport = () => {
 
     const payload = {
       shift,
-      datetime: date.toISOString(),
+      datetime: new Date().toISOString().slice(0, 19).replace("T", " "),
       subreports,
     };
 
-    const response = await axios.post('http://192.168.103.50:8000/api/reports', payload, {
+    const response = await axios.post('http://192.168.103.41:8000/api/reports', payload, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
