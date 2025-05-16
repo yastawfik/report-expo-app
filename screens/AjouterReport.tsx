@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -40,98 +40,121 @@ const AjouterReport = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [zoneForms, setZoneForms] = useState<SubReport[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   const handleAddZoneForm = () => {
     if (zoneForms.length >= 3) return;
     setZoneForms([...zoneForms, { zone: null, brickType: null, brickWeights: [], averageWeight: '' }]);
   };
 
-  const handleZoneSelect = (index: number, zone: string) => {
-    const updated = [...zoneForms];
-    updated[index].zone = zone;
-    setZoneForms(updated);
-  };
+const handleZoneSelect = (index: number, zone: string) => {
+  const updated = [...zoneForms];
+  updated[index].zone = zone;
+  setZoneForms(updated);
 
-  const handleBrickTypeSelect = (index: number, type: BrickType) => {
-    const updated = [...zoneForms];
-    updated[index].brickType = type;
-    updated[index].brickWeights = Array(brickTypeFields[type]).fill('');
-    setZoneForms(updated);
-  };
+  setFieldErrors(prev => {
+    const newErrors = { ...prev };
+    delete newErrors[`zone-${index}`];
+    return newErrors;
+  });
+};
 
-  const handleWeightChange = (formIndex: number, weightIndex: number, value: string) => {
-    const updated = [...zoneForms];
-    updated[formIndex].brickWeights[weightIndex] = value;
-    const validWeights = updated[formIndex].brickWeights.filter(w => w.trim() !== '' && !isNaN(Number(w)));
-    if (validWeights.length === updated[formIndex].brickWeights.length) {
-      const sum = updated[formIndex].brickWeights.reduce((acc, w) => acc + parseFloat(w), 0);
-      updated[formIndex].averageWeight = (sum / validWeights.length).toFixed(2);
-    } else {
-      updated[formIndex].averageWeight = '';
-    }
-    setZoneForms(updated);
-  };
+ const handleBrickTypeSelect = (index: number, type: BrickType) => {
+  const updated = [...zoneForms];
+  updated[index].brickType = type;
+  updated[index].brickWeights = Array(brickTypeFields[type]).fill('');
+  updated[index].averageWeight = '';
+  setZoneForms(updated);
 
- const handleSubmit = async () => {
-  if (!shift) {
-    Alert.alert('Erreur', 'Veuillez sélectionner un shift.');
-    return;
+  setFieldErrors(prev => {
+    const newErrors = { ...prev };
+    delete newErrors[`brickType-${index}`];
+    return newErrors;
+  });
+};
+
+ const handleWeightChange = (formIndex: number, weightIndex: number, value: string) => {
+  const updated = [...zoneForms];
+  updated[formIndex].brickWeights[weightIndex] = value;
+
+  const validWeights = updated[formIndex].brickWeights.filter(w => w.trim() !== '' && !isNaN(Number(w)));
+  if (validWeights.length === updated[formIndex].brickWeights.length) {
+    const sum = updated[formIndex].brickWeights.reduce((acc, w) => acc + parseFloat(w), 0);
+    updated[formIndex].averageWeight = (sum / validWeights.length).toFixed(2);
+  } else {
+    updated[formIndex].averageWeight = '';
   }
 
-  if (zoneForms.length === 0) {
-    Alert.alert('Erreur', 'Veuillez ajouter au moins une zone.');
-    return;
+  setZoneForms(updated);
+
+  // Clear error if the value is now valid
+  if (value.trim() !== '' && !isNaN(Number(value))) {
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[`weight-${formIndex}-${weightIndex}`];
+      return newErrors;
+    });
   }
+};
+  const handleSubmit = async () => {
+    const errors: { [key: string]: string } = {};
 
-  const incomplete = zoneForms.some(
-    (form) =>
-      !form.zone ||
-      !form.brickType ||
-      form.brickWeights.some((w) => w.trim() === '' || isNaN(Number(w))) ||
-      isNaN(Number(form.averageWeight))
-  );
+    if (!shift) errors.shift = 'Veuillez sélectionner un shift.';
+    if (zoneForms.length === 0) errors.zone = 'Veuillez ajouter au moins une zone.';
 
-  if (incomplete) {
-    Alert.alert('Erreur', 'Veuillez remplir tous les champs correctement.');
-    return;
-  }
+    zoneForms.forEach((form, i) => {
+      if (!form.zone) errors[`zone-${i}`] = 'Zone requise.';
+      if (!form.brickType) errors[`brickType-${i}`] = 'Type de brique requis.';
+      form.brickWeights.forEach((w, j) => {
+        if (w.trim() === '' || isNaN(Number(w))) {
+          errors[`weight-${i}-${j}`] = `Poids ${j + 1} invalide.`;
+        }
+      });
+    });
 
-  try {
-    const token = await AsyncStorage.getItem('token');
-    if (!token) {
-      Alert.alert('Erreur', 'Utilisateur non authentifié');
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      Alert.alert('Erreur', 'Veuillez corriger les champs indiqués.');
       return;
     }
 
-    const subreports = zoneForms.map((form) => ({
-      zone: form.zone,
-      brick_type: form.brickType,
-      weights: form.brickWeights.map(w => parseFloat(w)),
-      average_weight: parseFloat(form.averageWeight.toString()),
-    }));
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Erreur', 'Utilisateur non authentifié');
+        return;
+      }
 
-    const payload = {
-      shift,
-      datetime: new Date().toISOString().slice(0, 19).replace("T", " "),
-      subreports,
-    };
+      const subreports = zoneForms.map((form) => ({
+        zone: form.zone,
+        brick_type: form.brickType,
+        weights: form.brickWeights.map(w => parseFloat(w)),
+        average_weight: parseFloat(form.averageWeight),
+      }));
 
-    const response = await axios.post('http://192.168.103.43:8000/api/reports', payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const payload = {
+        shift,
+        datetime: new Date().toISOString().slice(0, 19).replace("T", " "),
+        subreports,
+      };
 
-    navigation.navigate('Home', { newReport: response.data });
-    Alert.alert('Succès', 'Rapport enregistré avec succès.');
-  } catch (err: any) {
-    console.error(err.response?.data || err.message);
-    Alert.alert('Erreur', 'Échec de l\'enregistrement du rapport');
-  }
-};
+      const response = await axios.post('http://192.168.103.43:8000/api/reports', payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      navigation.navigate('Home', { newReport: response.data });
+      Alert.alert('Succès', 'Rapport enregistré avec succès.');
+    } catch (err: any) {
+      console.error(err.response?.data || err.message);
+      Alert.alert('Erreur', 'Échec de l\'enregistrement du rapport');
+    }
+  };
+
   const usedZones = zoneForms.map((f) => f.zone).filter(Boolean);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* DATE & TIME */}
       <View style={styles.section}>
         <Text style={styles.label}>Date</Text>
         <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputBox}>
@@ -168,7 +191,6 @@ const AjouterReport = () => {
         )}
       </View>
 
-      {/* SHIFT */}
       <View style={styles.section}>
         <Text style={styles.label}>Shift</Text>
         <View style={styles.zoneButtonsContainer}>
@@ -176,15 +198,22 @@ const AjouterReport = () => {
             <TouchableOpacity
               key={s}
               style={[styles.zoneButton, shift === s && styles.selectedButton]}
-              onPress={() => setShift(s)}
+              onPress={() => {
+                setShift(s);
+                setFieldErrors(prev => {
+                  const newErrors = { ...prev };
+                  delete newErrors.shift;
+                  return newErrors;
+                });
+              }}
             >
               <Text style={styles.zoneButtonText}>{s}</Text>
             </TouchableOpacity>
           ))}
         </View>
+        {fieldErrors.shift && <Text style={styles.errorText}>{fieldErrors.shift}</Text>}
       </View>
 
-      {/* SUBREPORTS */}
       {zoneForms.map((form, index) => (
         <View key={index} style={[styles.section, { borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 20 }]}>
           <Text style={styles.label}>Zone {index + 1}</Text>
@@ -207,6 +236,7 @@ const AjouterReport = () => {
               );
             })}
           </View>
+          {fieldErrors[`zone-${index}`] && <Text style={styles.errorText}>{fieldErrors[`zone-${index}`]}</Text>}
 
           <Text style={styles.label}>Type de Briques</Text>
           <View style={styles.zoneButtonsContainer}>
@@ -220,19 +250,27 @@ const AjouterReport = () => {
               </TouchableOpacity>
             ))}
           </View>
+          {fieldErrors[`brickType-${index}`] && <Text style={styles.errorText}>{fieldErrors[`brickType-${index}`]}</Text>}
 
           {form.brickType && (
             <>
               <Text style={styles.label}>Poids des briques (kg)</Text>
               {form.brickWeights.map((w, i) => (
-                <TextInput
-                  key={i}
-                  style={styles.input}
-                  keyboardType="numeric"
-                  placeholder={`Poids ${i + 1}`}
-                  value={w}
-                  onChangeText={(t) => handleWeightChange(index, i, t)}
-                />
+                <View key={i}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      fieldErrors[`weight-${index}-${i}`] && { borderColor: 'red' },
+                    ]}
+                    keyboardType="numeric"
+                    placeholder={`Poids ${i + 1}`}
+                    value={w}
+                    onChangeText={(t) => handleWeightChange(index, i, t)}
+                  />
+                  {fieldErrors[`weight-${index}-${i}`] && (
+                    <Text style={styles.errorText}>{fieldErrors[`weight-${index}-${i}`]}</Text>
+                  )}
+                </View>
               ))}
               <Text style={styles.average}>Poids Moyen: {form.averageWeight || '0'} kg</Text>
             </>
@@ -240,14 +278,12 @@ const AjouterReport = () => {
         </View>
       ))}
 
-      {/* ADD NEW ZONE */}
       {zoneForms.length < 3 && (
         <TouchableOpacity onPress={handleAddZoneForm} style={styles.plusButton}>
           <Text style={styles.plusButtonText}>＋</Text>
         </TouchableOpacity>
       )}
 
-      {/* SUBMIT */}
       <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
         <Text style={styles.saveButtonText}>Enregistrer</Text>
       </TouchableOpacity>
@@ -316,6 +352,12 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   plusButtonText: { color: 'white', fontSize: 30, fontWeight: 'bold' },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 8,
+    marginTop: -5,
+  },
 });
 
 export default AjouterReport;
