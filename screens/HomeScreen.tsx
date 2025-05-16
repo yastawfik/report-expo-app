@@ -41,7 +41,7 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       const [reportResponse, userData] = await Promise.all([
-        axios.get('http://192.168.103.41:8000/api/reports'),
+        axios.get('http://192.168.103.43:8000/api/reports'),
         AsyncStorage.getItem('user'),
       ]);
 
@@ -80,7 +80,7 @@ export default function HomeScreen() {
     if (reportToDelete === null) return;
 
     try {
-      const response = await axios.delete(`http://192.168.103.41:8000/api/reports/${reportToDelete}`);
+      const response = await axios.delete(`http://192.168.103.43:8000/api/reports/${reportToDelete}`);
       console.log('✅ Report deleted from backend:', response.data);
       setReports((prev) => prev.filter((r) => r.id !== reportToDelete));
     } catch (error: any) {
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
   },
   deleteConfirmButton: {
-    backgroundColor: '#d9534f',
+    backgroundColor: '#d9534f',     
   },
   modalButtonText: {
     fontSize: 16,

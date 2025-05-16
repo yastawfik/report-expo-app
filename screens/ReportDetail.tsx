@@ -21,7 +21,7 @@ type ReportDetailRouteProp = RouteProp<RootStackParamList, 'ReportDetail'>;
 
 const downloadReportPdf = async (reportId: number) => {
   try {
-    const downloadUrl = `http://192.168.103.41:8000/reports/${reportId}/download`;
+    const downloadUrl = `http://192.168.103.43:8000/reports/${reportId}/download`;
 
     if (Platform.OS === 'web') {
       const link = document.createElement('a');
@@ -32,7 +32,8 @@ const downloadReportPdf = async (reportId: number) => {
 
       Alert.alert('Téléchargement', 'Le fichier PDF est en train de se télécharger.');
     } else {
-      const fileUri = FileSystem.documentDirectory + `rapport_${reportId}.pdf`;
+      const timestamp = new Date().toISOString().split('T')[0];
+      const fileUri = FileSystem.documentDirectory + `rapport_${reportId}_${timestamp}.pdf`;
       const downloadResumable = FileSystem.createDownloadResumable(downloadUrl, fileUri);
       const downloadResult = await downloadResumable.downloadAsync();
 
@@ -62,7 +63,7 @@ export default function ReportDetail() {
   useEffect(() => {
     const fetchFullReport = async () => {
       try {
-        const response = await axios.get(`http://192.168.103.41:8000/api/reports/${initialReport.id}`);
+        const response = await axios.get(`http://192.168.103.43:8000/api/reports/${initialReport.id}`);
         setReport(response.data);
         console.log('API response data:', response.data);
       } catch (error) {
