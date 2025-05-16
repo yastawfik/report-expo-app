@@ -20,9 +20,9 @@ export type Report = {
   brick_type?: string;
   shift?: string;
   subreports?: SubReport[];
-  
   datetime?: string;
   averageWeight?: number;
+  locked?: boolean;
 };
   export type RootStackParamList = {
     Login: undefined; 

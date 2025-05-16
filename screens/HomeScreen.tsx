@@ -129,21 +129,25 @@ export default function HomeScreen() {
             <Text style={styles.buttonText}> Voir Détails</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, styles.editButton]}
-            onPress={() => navigation.navigate('EditReport', { report: item })}
-          >
-            <MaterialIcons name="edit" size={16} color="#fff" />
-            <Text style={styles.buttonText}> Modifier</Text>
-          </TouchableOpacity>
+        {!item.locked && (
+  <TouchableOpacity
+    style={[styles.button, styles.editButton]}
+    onPress={() => navigation.navigate('EditReport', { report: item })}
+  >
+    <MaterialIcons name="edit" size={16} color="#fff" />
+    <Text style={styles.buttonText}> Modifier</Text>
+  </TouchableOpacity>
+)}
 
-          <TouchableOpacity
-            style={[styles.button, styles.deleteButton]}
-            onPress={() => confirmDeleteReport(item.id)}
-          >
-            <MaterialIcons name="delete" size={16} color="#fff" />
-            <Text style={styles.buttonText}> Supprimer</Text>
-          </TouchableOpacity>
+ {!item.locked && (
+  <TouchableOpacity
+    style={[styles.button, styles.deleteButton]}
+    onPress={() => confirmDeleteReport(item.id)}
+  >
+    <MaterialIcons name="delete" size={16} color="#fff" />
+    <Text style={styles.buttonText}> Supprimer</Text>
+  </TouchableOpacity>
+)}
         </View>
       </View>
     );
