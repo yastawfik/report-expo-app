@@ -17,7 +17,13 @@ import * as Sharing from 'expo-sharing';
 import { Pressable } from 'react-native-gesture-handler';
 import axios from 'axios';
 
+
 type ReportDetailRouteProp = RouteProp<RootStackParamList, 'ReportDetail'>;
+
+function ReportDetailScreen({ route }: { route: ReportDetailRouteProp }) {
+  const { report } = route.params;
+  // Use report here...
+}
 
 const downloadReportPdf = async (reportId: number) => {
   try {
@@ -173,7 +179,7 @@ export default function ReportDetail() {
         <Text style={styles.buttonText}>📄 Télécharger PDF</Text>
       </TouchableOpacity>
 
-      <Pressable style={styles.closeButton} onPress={() => navigation.navigate('Home')}>
+      <Pressable style={styles.closeButton} onPress={() => navigation.goBack()}>
         <Text style={styles.buttonText}>Fermer</Text>
       </Pressable>
     </View>

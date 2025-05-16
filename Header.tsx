@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, FlatList, Alert } from 'react-native';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  Animated,
+  Dimensions
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 
 type HeaderProps = {
@@ -9,92 +17,89 @@ type HeaderProps = {
   onLogout: () => void;
 };
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function Header({ userInitial, onLogout }: HeaderProps) {
-  const [modalVisible, setModalVisible] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [avatarModalVisible, setAvatarModalVisible] = useState(false);
-  const [reports, setReports] = useState<any[]>([]);  // State to store reports
-  const [reportsModalVisible, setReportsModalVisible] = useState(false); // For showing the reports modal
- const navigation = useNavigation<any>();
+  const sidebarAnim = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
+  const navigation = useNavigation<any>();
+
+  const openSidebar = () => {
+    setSidebarVisible(true);
+    Animated.timing(sidebarAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const closeSidebar = () => {
+    Animated.timing(sidebarAnim, {
+      toValue: -SCREEN_WIDTH,
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => setSidebarVisible(false));
+  };
 
   return (
     <View style={styles.container}>
-      {/* Hamburger Menu Icon */}
-      <TouchableOpacity onPress={() => setModalVisible(true)}>
+      {/* Hamburger Icon */}
+      <TouchableOpacity onPress={openSidebar}>
         <MaterialIcons name="menu" size={28} color="#fff" />
       </TouchableOpacity>
 
       <Text style={styles.title}>Rapport Dosage</Text>
 
-      {/* User Avatar Circle */}
+      {/* Avatar */}
       <TouchableOpacity onPress={() => setAvatarModalVisible(true)}>
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarText}>{userInitial}</Text>
         </View>
       </TouchableOpacity>
 
-      {/* Modal for hamburger menu options */}
-      <Modal
-        transparent
-        animationType="fade"
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
-          <View style={styles.menu}>
-            {/* Option 1: Fetch all reports */}
-            <TouchableOpacity 
-            onPress={() => navigation.navigate('AllReportsScreen')} 
-            style={styles.menuItem}>
-              <Text style={styles.menuText}>Tous Les Rapports</Text>
-            </TouchableOpacity>
+      {/* Sidebar Modal */}
+      <Modal transparent visible={sidebarVisible} animationType="none">
+        <Pressable style={styles.backdrop} onPress={closeSidebar} />
+        <Animated.View style={[styles.sidebar, { left: sidebarAnim }]}>
+          <Text style={styles.sidebarTitle}>Menu</Text>
+          <TouchableOpacity
+            style={styles.sidebarItem}
+            onPress={() => {
+              closeSidebar();
+              navigation.navigate('AllReports');
+            }}
+          >
+            <Text style={styles.sidebarText}>Tous Les Rapports</Text>
+          </TouchableOpacity>
 
-            {/* Option 2 */}
-            <TouchableOpacity onPress={() => console.log('Option 2 clicked')} style={styles.menuItem}>
-              <Text style={styles.menuText}>Mes Rapports</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
+          <TouchableOpacity
+            style={styles.sidebarItem}
+            onPress={() => {
+              closeSidebar();
+              navigation.navigate('Home', { newReport: true });
+            }}
+          >
+            <Text style={styles.sidebarText}>Mes Rapports</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </Modal>
 
-      {/* Modal for avatar menu (with logout option) */}
+      {/* Avatar Menu */}
       <Modal
         transparent
         animationType="fade"
         visible={avatarModalVisible}
         onRequestClose={() => setAvatarModalVisible(false)}
       >
-        <Pressable style={styles.avatarOverlay} onPress={() => setAvatarModalVisible(false)}>
+        <Pressable
+          style={styles.avatarOverlay}
+          onPress={() => setAvatarModalVisible(false)}
+        >
           <View style={styles.avatarMenu}>
-            {/* Logout option for avatar */}
             <TouchableOpacity onPress={onLogout} style={styles.menuItem}>
               <Text style={styles.menuText}>Logout</Text>
             </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Modal for displaying all reports */}
-      <Modal
-        transparent
-        animationType="slide"
-        visible={reportsModalVisible}
-        onRequestClose={() => setReportsModalVisible(false)}
-      >
-        <Pressable style={styles.overlay} onPress={() => setReportsModalVisible(false)}>
-          <View style={styles.reportsMenu}>
-            <FlatList
-              data={reports}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <View style={styles.reportItem}>
-                  <Text style={styles.reportText}>Zone: {item.zone}</Text>
-                  <Text style={styles.reportText}>Brick Type: {item.brick_type}</Text>
-                  <Text style={styles.reportText}>Created By: {item.user?.name}</Text>
-                  <Text style={styles.reportText}>Date: {item.created_at.split('T')[0]}</Text>
-                </View>
-              )}
-            />
           </View>
         </Pressable>
       </Modal>
@@ -129,13 +134,6 @@ const styles = StyleSheet.create({
     color: '#A45B17',
     fontWeight: 'bold',
   },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    marginTop: 60,
-    marginLeft: 16,
-  },
   avatarOverlay: {
     flex: 1,
     justifyContent: 'flex-start',
@@ -151,16 +149,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginTop: 10,
   },
-  menu: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    elevation: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    width: 200,
-    marginTop: 60,
-    marginLeft: 16,
-  },
   menuItem: {
     paddingVertical: 10,
   },
@@ -168,20 +156,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#A45B17',
   },
-  reportsMenu: {
+  backdrop: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#00000099',
+  },
+  sidebar: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 250,
     backgroundColor: '#fff',
-    borderRadius: 8,
+    paddingTop: 60,
+    paddingHorizontal: 16,
     elevation: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginTop: 60,
-    marginLeft: 16,
-    width: '90%',
   },
-  reportItem: {
-    marginBottom: 10,
+  sidebarTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#A45B17',
   },
-  reportText: {
+  sidebarItem: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  sidebarText: {
     fontSize: 16,
     color: '#A45B17',
   },

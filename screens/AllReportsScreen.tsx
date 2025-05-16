@@ -1,82 +1,146 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import axios from 'axios';
-
-interface Report {
-  id: number;
-  zone: string;
-  brick_type: string;
-  average_weight: number;
-  created_at: string;
-  user: {
-    name: string;
-  };
-}
+import { MaterialIcons } from '@expo/vector-icons';
+import Header from '../Header';
+import SubHeader from '../SubHeader';
+import { useNavigation } from '@react-navigation/native';
+import { Report } from '../type';
 
 export default function AllReportsScreen() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigation = useNavigation<any>();
+  const [userInitial, setUserInitial] = useState('A');
+
+  const fetchAllReports = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('http://192.168.103.43:8000/api/reports');
+      const data = (response.data as { data: Report[] }).data;
+      const sorted = data.sort((a: Report, b: Report) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setReports(sorted);
+    } catch (error) {
+      console.error('❌ Error fetching all reports:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        const response = await axios.get<Report[]>('http://192.168.103.43:8000/api/reports/all');
-        setReports(response.data);
-      } catch (error) {
-        Alert.alert('Erreur', 'Échec du chargement des rapports');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReports();
+    fetchAllReports();
   }, []);
 
-  if (loading) {
-    return <ActivityIndicator size="large" style={{ flex: 1 }} />;
-  }
+  const renderItem = ({ item }: { item: Report }) => {
+    const date = new Date(item.created_at);
+
+    return (
+      <View style={styles.card}>
+        <Text style={styles.name}>{item.user?.name || 'Nom Inconnu'}</Text>
+
+        <View style={styles.row}>
+          <MaterialIcons name="calendar-today" size={20} color="#A45B17" />
+          <Text style={styles.text}>{date.toLocaleDateString()}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <MaterialIcons name="access-time" size={20} color="#A45B17" />
+          <Text style={styles.text}>
+            {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('ReportDetail', { report: item })}
+        >
+          <MaterialIcons name="info" size={16} color="#fff" />
+          <Text style={styles.buttonText}> Voir Détails</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>📄 Tous les Rapports</Text>
-      <FlatList
-        data={reports}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.reportCard}>
-            <Text style={styles.reportText}>🧱 {item.brick_type}</Text>
-            <Text style={styles.reportText}>📍 {item.zone}</Text>
-            <Text style={styles.reportText}>⚖️ {item.average_weight} kg</Text>
-            <Text style={styles.reportText}>👤 {item.user?.name || 'Inconnu'}</Text>
-            <Text style={styles.reportText}>📅 {item.created_at.split('T')[0]}</Text>
-          </View>
-        )}
-      />
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <Header userInitial={userInitial} onLogout={() => {}} />
+      <SubHeader onFilterPress={() => console.log('Filter pressed')} />
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#A45B17" style={{ marginTop: 50 }} />
+      ) : (
+        <FlatList
+          data={reports}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Aucun rapport disponible.</Text>
+          }
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  list: {
     padding: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: '#f4f4f4',
+    flexGrow: 1,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  card: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 20,
     marginBottom: 16,
-    color: '#A45B17',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 1, height: 1 },
+    shadowRadius: 5,
+    elevation: 3,
   },
-  reportCard: {
-    backgroundColor: '#F8EDE3',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
+  name: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
   },
-  reportText: {
-    fontSize: 14,
-    marginBottom: 4,
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  text: {
+    fontSize: 16,
+    marginLeft: 8,
     color: '#333',
+  },
+  button: {
+    marginTop: 12,
+    backgroundColor: '#A45B17',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 40,
+    fontSize: 16,
+    color: '#777',
   },
 });
