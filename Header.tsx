@@ -62,26 +62,39 @@ export default function Header({ userInitial, onLogout }: HeaderProps) {
       <Modal transparent visible={sidebarVisible} animationType="none">
         <Pressable style={styles.backdrop} onPress={closeSidebar} />
         <Animated.View style={[styles.sidebar, { left: sidebarAnim }]}>
-          <Text style={styles.sidebarTitle}>Menu</Text>
-          <TouchableOpacity
-            style={styles.sidebarItem}
-            onPress={() => {
-              closeSidebar();
-              navigation.navigate('AllReports');
-            }}
-          >
-            <Text style={styles.sidebarText}>Tous Les Rapports</Text>
-          </TouchableOpacity>
+          {/* Sidebar Header with User Info */}
+          <View style={styles.sidebarHeader}>
+            <View style={styles.sidebarAvatar}>
+              <Text style={styles.sidebarAvatarText}>{userInitial}</Text>
+            </View>
+            <Text style={styles.sidebarWelcome}>Bienvenue!</Text>
+          </View>
 
-          <TouchableOpacity
-            style={styles.sidebarItem}
-            onPress={() => {
-              closeSidebar();
-              navigation.navigate('Home', { newReport: true });
-            }}
-          >
-            <Text style={styles.sidebarText}>Mes Rapports</Text>
-          </TouchableOpacity>
+          {/* Divider */}
+          <View style={styles.divider} />
+
+          {/* Menu Items */}
+       <TouchableOpacity
+  style={styles.sidebarItem}
+  onPress={() => {
+    closeSidebar();
+    navigation.navigate('AllReports', { headerTitle: 'Historique générale' });
+  }}
+>
+  <MaterialIcons name="list-alt" size={22} color="#A45B17" />
+  <Text style={styles.sidebarText}>Tous les Rapports</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  style={styles.sidebarItem}
+  onPress={() => {
+    closeSidebar();
+    navigation.navigate('Home', { newReport: true, headerTitle: 'Historique de Mes Rapports' });
+  }}
+>
+  <MaterialIcons name="assignment" size={22} color="#A45B17" />
+  <Text style={styles.sidebarText}>Mes Rapports</Text>
+</TouchableOpacity>
         </Animated.View>
       </Modal>
 
@@ -166,25 +179,51 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: 250,
+    width: 280,
     backgroundColor: '#fff',
-    paddingTop: 60,
+    paddingTop: 40,
     paddingHorizontal: 16,
     elevation: 5,
+    borderRightWidth: 1,
+    borderRightColor: '#ddd',
   },
-  sidebarTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  sidebarHeader: {
+    alignItems: 'center',
     marginBottom: 20,
+  },
+  sidebarAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#A45B17',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  sidebarAvatarText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  sidebarWelcome: {
+    fontSize: 16,
     color: '#A45B17',
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#eee',
+    marginVertical: 10,
   },
   sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingHorizontal: 10,
   },
   sidebarText: {
     fontSize: 16,
-    color: '#A45B17',
+    color: '#333',
+    marginLeft: 10,
   },
 });

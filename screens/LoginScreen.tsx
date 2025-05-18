@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }: any) {
   
     try {
       setLoading(true);
-      const response = await axios.post<{ token: string; user: any }>('http://192.168.103.43:8000/api/login', {
+      const response = await axios.post<{ token: string; user: any }>('http://192.168.22.15:8000/api/login', {
         email,
         password,
       });

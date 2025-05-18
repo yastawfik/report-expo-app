@@ -41,7 +41,7 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       const [reportResponse, userData] = await Promise.all([
-        axios.get('http://192.168.103.43:8000/api/reports'),
+        axios.get('http://192.168.22.15:8000/api/reports'),
         AsyncStorage.getItem('user'),
       ]);
 
@@ -80,7 +80,7 @@ export default function HomeScreen() {
     if (reportToDelete === null) return;
 
     try {
-      const response = await axios.delete(`http://192.168.103.43:8000/api/reports/${reportToDelete}`);
+      const response = await axios.delete(`http://192.168.22.15:8000/api/reports/${reportToDelete}`);
       console.log('✅ Report deleted from backend:', response.data);
       setReports((prev) => prev.filter((r) => r.id !== reportToDelete));
     } catch (error: any) {
@@ -156,7 +156,7 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <Header userInitial={userInitial} onLogout={handleLogout} />
-      <SubHeader onFilterPress={() => console.log('Filter pressed')} />
+      <SubHeader title="Historique de Mes Rapports" />s
       {loading ? (
         <ActivityIndicator size="large" color="#A45B17" style={{ marginTop: 50 }} />
       ) : (

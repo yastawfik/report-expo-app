@@ -10,7 +10,7 @@
     const [error, setError] = useState('');
 
     const handleRegister = async () => {
-      if (!name || !email || !password) {cm
+      if (!name || !email || !password) {
         setError('All fields are required.');
         return;
       }
@@ -18,7 +18,7 @@
       try {
         setLoading(true);
         setError('');
-        await axios.post('http://192.168.103.43:8000/api/register', {
+        await axios.post('http://192.168.22.15:8000/api/register', {
           name,
           email,
           password,

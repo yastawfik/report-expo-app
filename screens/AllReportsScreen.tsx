@@ -23,7 +23,7 @@ export default function AllReportsScreen() {
   const fetchAllReports = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://192.168.103.43:8000/api/reports');
+      const response = await axios.get('http://192.168.22.15:8000/api/reports');
       const data = (response.data as { data: Report[] }).data;
       const sorted = data.sort((a: Report, b: Report) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setReports(sorted);
@@ -71,7 +71,7 @@ export default function AllReportsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <Header userInitial={userInitial} onLogout={() => {}} />
-      <SubHeader onFilterPress={() => console.log('Filter pressed')} />
+      <SubHeader title="Historique Général" />
 
       {loading ? (
         <ActivityIndicator size="large" color="#A45B17" style={{ marginTop: 50 }} />
