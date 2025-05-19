@@ -47,55 +47,56 @@ const AjouterReport = () => {
     setZoneForms([...zoneForms, { zone: null, brickType: null, brickWeights: [], averageWeight: '' }]);
   };
 
-const handleZoneSelect = (index: number, zone: string) => {
-  const updated = [...zoneForms];
-  updated[index].zone = zone;
-  setZoneForms(updated);
+  const handleZoneSelect = (index: number, zone: string) => {
+    const updated = [...zoneForms];
+    updated[index].zone = zone;
+    setZoneForms(updated);
 
-  setFieldErrors(prev => {
-    const newErrors = { ...prev };
-    delete newErrors[`zone-${index}`];
-    return newErrors;
-  });
-};
-
- const handleBrickTypeSelect = (index: number, type: BrickType) => {
-  const updated = [...zoneForms];
-  updated[index].brickType = type;
-  updated[index].brickWeights = Array(brickTypeFields[type]).fill('');
-  updated[index].averageWeight = '';
-  setZoneForms(updated);
-
-  setFieldErrors(prev => {
-    const newErrors = { ...prev };
-    delete newErrors[`brickType-${index}`];
-    return newErrors;
-  });
-};
-
- const handleWeightChange = (formIndex: number, weightIndex: number, value: string) => {
-  const updated = [...zoneForms];
-  updated[formIndex].brickWeights[weightIndex] = value;
-
-  const validWeights = updated[formIndex].brickWeights.filter(w => w.trim() !== '' && !isNaN(Number(w)));
-  if (validWeights.length === updated[formIndex].brickWeights.length) {
-    const sum = updated[formIndex].brickWeights.reduce((acc, w) => acc + parseFloat(w), 0);
-    updated[formIndex].averageWeight = (sum / validWeights.length).toFixed(2);
-  } else {
-    updated[formIndex].averageWeight = '';
-  }
-
-  setZoneForms(updated);
-
-  // Clear error if the value is now valid
-  if (value.trim() !== '' && !isNaN(Number(value))) {
     setFieldErrors(prev => {
       const newErrors = { ...prev };
-      delete newErrors[`weight-${formIndex}-${weightIndex}`];
+      delete newErrors[`zone-${index}`];
       return newErrors;
     });
-  }
-};
+  };
+
+  const handleBrickTypeSelect = (index: number, type: BrickType) => {
+    const updated = [...zoneForms];
+    updated[index].brickType = type;
+    updated[index].brickWeights = Array(brickTypeFields[type]).fill('');
+    updated[index].averageWeight = '';
+    setZoneForms(updated);
+
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[`brickType-${index}`];
+      return newErrors;
+    });
+  };
+
+  const handleWeightChange = (formIndex: number, weightIndex: number, value: string) => {
+    const updated = [...zoneForms];
+    updated[formIndex].brickWeights[weightIndex] = value;
+
+    const validWeights = updated[formIndex].brickWeights.filter(w => w.trim() !== '' && !isNaN(Number(w)));
+    if (validWeights.length === updated[formIndex].brickWeights.length) {
+      const sum = updated[formIndex].brickWeights.reduce((acc, w) => acc + parseFloat(w), 0);
+      updated[formIndex].averageWeight = (sum / validWeights.length).toFixed(2);
+    } else {
+      updated[formIndex].averageWeight = '';
+    }
+
+    setZoneForms(updated);
+
+    // Clear error if the value is now valid
+    if (value.trim() !== '' && !isNaN(Number(value))) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[`weight-${formIndex}-${weightIndex}`];
+        return newErrors;
+      });
+    }
+  };
+
   const handleSubmit = async () => {
     const errors: { [key: string]: string } = {};
 
@@ -139,7 +140,7 @@ const handleZoneSelect = (index: number, zone: string) => {
         subreports,
       };
 
-      const response = await axios.post('http://192.168.103.43:8000/api/reports', payload, {
+      const response = await axios.post('http://192.168.103.47:8000/api/reports', payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -154,145 +155,151 @@ const handleZoneSelect = (index: number, zone: string) => {
   const usedZones = zoneForms.map((f) => f.zone).filter(Boolean);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.label}>Date</Text>
-        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputBox}>
-          <Text>{date.toLocaleDateString()}</Text>
-        </TouchableOpacity>
-        {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={(_, selectedDate) => {
-              setShowDatePicker(false);
-              if (selectedDate) setDate(selectedDate);
-            }}
-          />
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>Heure</Text>
-        <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.inputBox}>
-          <Text>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-        </TouchableOpacity>
-        {showTimePicker && (
-          <DateTimePicker
-            value={time}
-            mode="time"
-            display="default"
-            onChange={(_, selectedTime) => {
-              setShowTimePicker(false);
-              if (selectedTime) setTime(selectedTime);
-            }}
-          />
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>Shift</Text>
-        <View style={styles.zoneButtonsContainer}>
-          {shifts.map((s) => (
-            <TouchableOpacity
-              key={s}
-              style={[styles.zoneButton, shift === s && styles.selectedButton]}
-              onPress={() => {
-                setShift(s);
-                setFieldErrors(prev => {
-                  const newErrors = { ...prev };
-                  delete newErrors.shift;
-                  return newErrors;
-                });
+    <View style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer} 
+        showsVerticalScrollIndicator={true} // Enable vertical scrollbar
+      >
+        <View style={styles.section}>
+          <Text style={styles.label}>Date</Text>
+          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputBox}>
+            <Text>{date.toLocaleDateString()}</Text>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display="default"
+              onChange={(_, selectedDate) => {
+                setShowDatePicker(false);
+                if (selectedDate) setDate(selectedDate);
               }}
-            >
-              <Text style={styles.zoneButtonText}>{s}</Text>
-            </TouchableOpacity>
-          ))}
+            />
+          )}
         </View>
-        {fieldErrors.shift && <Text style={styles.errorText}>{fieldErrors.shift}</Text>}
-      </View>
 
-      {zoneForms.map((form, index) => (
-        <View key={index} style={[styles.section, { borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 20 }]}>
-          <Text style={styles.label}>Zone {index + 1}</Text>
-          <View style={styles.zoneButtonsContainer}>
-            {zones.map((z) => {
-              const isDisabled = usedZones.includes(z) && form.zone !== z;
-              return (
-                <TouchableOpacity
-                  key={z}
-                  style={[
-                    styles.zoneButton,
-                    form.zone === z && styles.selectedButton,
-                    isDisabled && { opacity: 0.4 },
-                  ]}
-                  onPress={() => !isDisabled && handleZoneSelect(index, z)}
-                  disabled={isDisabled}
-                >
-                  <Text style={styles.zoneButtonText}>{z}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          {fieldErrors[`zone-${index}`] && <Text style={styles.errorText}>{fieldErrors[`zone-${index}`]}</Text>}
+        <View style={styles.section}>
+          <Text style={styles.label}>Heure</Text>
+          <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.inputBox}>
+            <Text>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+          </TouchableOpacity>
+          {showTimePicker && (
+            <DateTimePicker
+              value={time}
+              mode="time"
+              display="default"
+              onChange={(_, selectedTime) => {
+                setShowTimePicker(false);
+                if (selectedTime) setTime(selectedTime);
+              }}
+            />
+          )}
+        </View>
 
-          <Text style={styles.label}>Type de Briques</Text>
+        <View style={styles.section}>
+          <Text style={styles.label}>Shift</Text>
           <View style={styles.zoneButtonsContainer}>
-            {Object.keys(brickTypeFields).map((type) => (
+            {shifts.map((s) => (
               <TouchableOpacity
-                key={type}
-                style={[styles.zoneButton, form.brickType === type && styles.selectedButton]}
-                onPress={() => handleBrickTypeSelect(index, type as BrickType)}
+                key={s}
+                style={[styles.zoneButton, shift === s && styles.selectedButton]}
+                onPress={() => {
+                  setShift(s);
+                  setFieldErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.shift;
+                    return newErrors;
+                  });
+                }}
               >
-                <Text style={styles.zoneButtonText}>{type}</Text>
+                <Text style={styles.zoneButtonText}>{s}</Text>
               </TouchableOpacity>
             ))}
           </View>
-          {fieldErrors[`brickType-${index}`] && <Text style={styles.errorText}>{fieldErrors[`brickType-${index}`]}</Text>}
-
-          {form.brickType && (
-            <>
-              <Text style={styles.label}>Poids des briques (kg)</Text>
-              {form.brickWeights.map((w, i) => (
-                <View key={i}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      fieldErrors[`weight-${index}-${i}`] && { borderColor: 'red' },
-                    ]}
-                    keyboardType="numeric"
-                    placeholder={`Poids ${i + 1}`}
-                    value={w}
-                    onChangeText={(t) => handleWeightChange(index, i, t)}
-                  />
-                  {fieldErrors[`weight-${index}-${i}`] && (
-                    <Text style={styles.errorText}>{fieldErrors[`weight-${index}-${i}`]}</Text>
-                  )}
-                </View>
-              ))}
-              <Text style={styles.average}>Poids Moyen: {form.averageWeight || '0'} kg</Text>
-            </>
-          )}
+          {fieldErrors.shift && <Text style={styles.errorText}>{fieldErrors.shift}</Text>}
         </View>
-      ))}
 
-      {zoneForms.length < 3 && (
-        <TouchableOpacity onPress={handleAddZoneForm} style={styles.plusButton}>
-          <Text style={styles.plusButtonText}>＋</Text>
+        {zoneForms.map((form, index) => (
+          <View key={index} style={[styles.section, { borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 20 }]}>
+            <Text style={styles.label}>Zone {index + 1}</Text>
+            <View style={styles.zoneButtonsContainer}>
+              {zones.map((z) => {
+                const isDisabled = usedZones.includes(z) && form.zone !== z;
+                return (
+                  <TouchableOpacity
+                    key={z}
+                    style={[
+                      styles.zoneButton,
+                      form.zone === z && styles.selectedButton,
+                      isDisabled && { opacity: 0.4 },
+                    ]}
+                    onPress={() => !isDisabled && handleZoneSelect(index, z)}
+                    disabled={isDisabled}
+                  >
+                    <Text style={styles.zoneButtonText}>{z}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {fieldErrors[`zone-${index}`] && <Text style={styles.errorText}>{fieldErrors[`zone-${index}`]}</Text>}
+
+            <Text style={styles.label}>Type de Briques</Text>
+            <View style={styles.zoneButtonsContainer}>
+              {Object.keys(brickTypeFields).map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={[styles.zoneButton, form.brickType === type && styles.selectedButton]}
+                  onPress={() => handleBrickTypeSelect(index, type as BrickType)}
+                >
+                  <Text style={styles.zoneButtonText}>{type}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {fieldErrors[`brickType-${index}`] && <Text style={styles.errorText}>{fieldErrors[`brickType-${index}`]}</Text>}
+
+            {form.brickType && (
+              <>
+                <Text style={styles.label}>Poids des briques (kg)</Text>
+                {form.brickWeights.map((w, i) => (
+                  <View key={i}>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        fieldErrors[`weight-${index}-${i}`] && { borderColor: 'red' },
+                      ]}
+                      keyboardType="numeric"
+                      placeholder={`Poids ${i + 1}`}
+                      value={w}
+                      onChangeText={(t) => handleWeightChange(index, i, t)}
+                    />
+                    {fieldErrors[`weight-${index}-${i}`] && (
+                      <Text style={styles.errorText}>{fieldErrors[`weight-${index}-${i}`]}</Text>
+                    )}
+                  </View>
+                ))}
+                <Text style={styles.average}>Poids Moyen: {form.averageWeight || '0'} kg</Text>
+              </>
+            )}
+          </View>
+        ))}
+
+        {zoneForms.length < 3 && (
+          <TouchableOpacity onPress={handleAddZoneForm} style={styles.plusButton}>
+            <Text style={styles.plusButtonText}>＋</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
+          <Text style={styles.saveButtonText}>Enregistrer</Text>
         </TouchableOpacity>
-      )}
-
-      <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
-        <Text style={styles.saveButtonText}>Enregistrer</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#fff', flexGrow: 1 },
+  container: { flex: 1, backgroundColor: '#fff' },
+  scrollContainer: { padding: 20, flexGrow: 1 },
   section: { marginBottom: 20 },
   label: { fontSize: 16, fontWeight: '600', marginBottom: 6 },
   zoneButtonsContainer: {

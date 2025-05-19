@@ -13,6 +13,13 @@ import Header from '../Header';
 import SubHeader from '../SubHeader';
 import { useNavigation } from '@react-navigation/native';
 import { Report } from '../type';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Define the combined height of Header and SubHeader
+const HEADER_HEIGHT = 60;
+const SUB_HEADER_HEIGHT = 46; // Adjust if your SubHeader's actual height is different
+const TOP_OFFSET = HEADER_HEIGHT + SUB_HEADER_HEIGHT;
+const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
 
 export default function AllReportsScreen() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -23,9 +30,12 @@ export default function AllReportsScreen() {
   const fetchAllReports = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://192.168.22.15:8000/api/reports');
+      const response = await axios.get('http://192.168.103.47:8000/api/reports');
       const data = (response.data as { data: Report[] }).data;
-      const sorted = data.sort((a: Report, b: Report) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const sorted = data.sort(
+        (a: Report, b: Report) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
       setReports(sorted);
     } catch (error) {
       console.error('❌ Error fetching all reports:', error);
@@ -38,11 +48,16 @@ export default function AllReportsScreen() {
     fetchAllReports();
   }, []);
 
-  const renderItem = ({ item }: { item: Report }) => {
+  const renderItem = ({ item, index }: { item: Report; index: number }) => {
     const date = new Date(item.created_at);
+    const isFirstItem = index === 0;
+    const cardStyle = [styles.card];
+    if (isFirstItem) {
+      cardStyle.push({ marginTop: FIRST_ITEM_MARGIN_TOP });
+    }
 
     return (
-      <View style={styles.card}>
+      <View style={cardStyle}>
         <Text style={styles.name}>{item.user?.name || 'Nom Inconnu'}</Text>
 
         <View style={styles.row}>
@@ -69,10 +84,9 @@ export default function AllReportsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={styles.safeArea}>
       <Header userInitial={userInitial} onLogout={() => {}} />
       <SubHeader title="Historique Général" />
-
       {loading ? (
         <ActivityIndicator size="large" color="#A45B17" style={{ marginTop: 50 }} />
       ) : (
@@ -80,27 +94,37 @@ export default function AllReportsScreen() {
           data={reports}
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.listContainer]} // Removed paddingTop here
           ListEmptyComponent={
             <Text style={styles.emptyText}>Aucun rapport disponible.</Text>
           }
+          style={[styles.flatList, { position: 'absolute', top: TOP_OFFSET, bottom: 0, left: 0, right: 0 }]}
+          showsVerticalScrollIndicator={true}
+          scrollEnabled={true}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  list: {
-    padding: 16,
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  flatList: {
     backgroundColor: '#f4f4f4',
-    flexGrow: 1,
+  },  
+  listContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
   },
   card: {
     backgroundColor: '#fff',
     padding: 20,
     borderRadius: 20,
     marginBottom: 16,
+    marginTop: 0, // Default value, can be overridden dynamically
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 1, height: 1 },

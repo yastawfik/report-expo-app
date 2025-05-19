@@ -37,11 +37,17 @@ export default function HomeScreen() {
     setIsLoggedIn(false);
   };
 
+  // Define the combined height of Header and SubHeader
+const HEADER_HEIGHT = 60;
+const SUB_HEADER_HEIGHT = 46; // Adjust if your SubHeader's actual height is different
+const TOP_OFFSET = HEADER_HEIGHT + SUB_HEADER_HEIGHT;
+const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
+
   const fetchReportsAndUser = async () => {
     try {
       setLoading(true);
       const [reportResponse, userData] = await Promise.all([
-        axios.get('http://192.168.22.15:8000/api/reports'),
+        axios.get('http://192.168.103.47:8000/api/reports'),
         AsyncStorage.getItem('user'),
       ]);
 
@@ -80,7 +86,7 @@ export default function HomeScreen() {
     if (reportToDelete === null) return;
 
     try {
-      const response = await axios.delete(`http://192.168.22.15:8000/api/reports/${reportToDelete}`);
+      const response = await axios.delete(`http://192.168.103.47:8000/api/reports/${reportToDelete}`);
       console.log('✅ Report deleted from backend:', response.data);
       setReports((prev) => prev.filter((r) => r.id !== reportToDelete));
     } catch (error: any) {
@@ -102,8 +108,14 @@ export default function HomeScreen() {
     }, [route.params?.newReport])
   );
 
-  const renderItem = ({ item }: { item: Report }) => {
+ const renderItem = ({ item, index }: { item: Report; index: number }) => {
     const date = new Date(item.created_at);
+    const isFirstItem = index === 0;
+    const cardStyle = [styles.card];
+    if (isFirstItem) {
+      cardStyle.push({ marginTop: FIRST_ITEM_MARGIN_TOP });
+    }
+
     return (
       <View style={styles.card}>
         <Text style={styles.name}>{item.user?.name || 'Nom Inconnu'}</Text>
@@ -156,17 +168,20 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <Header userInitial={userInitial} onLogout={handleLogout} />
-      <SubHeader title="Historique de Mes Rapports" />s
+      <SubHeader title="Historique de Mes Rapports" />
       {loading ? (
         <ActivityIndicator size="large" color="#A45B17" style={{ marginTop: 50 }} />
       ) : (
-        <FlatList
-          data={reports}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.emptyText}>Aucun rapport trouvé.</Text>}
-        />
+    <FlatList
+  data={reports}
+  renderItem={renderItem}
+  keyExtractor={(item) => item.id.toString()}
+  contentContainerStyle={styles.list}
+  ListEmptyComponent={<Text style={styles.emptyText}>Aucun rapport trouvé.</Text>}
+  style={[styles.flatList, { position: 'absolute', top: TOP_OFFSET, bottom: 0, left: 0, right: 0 }]}
+   showsVerticalScrollIndicator={true}
+ scrollEnabled={true}
+/>
       )}
 
       <TouchableOpacity
@@ -214,7 +229,6 @@ const styles = StyleSheet.create({
   list: {
     padding: 16,
     backgroundColor: '#f4f4f4',
-    flexGrow: 1,
   },
   card: {
     backgroundColor: '#fff',
@@ -317,6 +331,9 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+  },
+    flatList: {
+    backgroundColor: '#f4f4f4',
   },
   modalButton: {
     paddingHorizontal: 16,

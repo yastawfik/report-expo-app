@@ -46,7 +46,7 @@ export default function Header({ userInitial, onLogout }: HeaderProps) {
     <View style={styles.container}>
       {/* Hamburger Icon */}
       <TouchableOpacity onPress={openSidebar}>
-        <MaterialIcons name="menu" size={28} color="#fff" />
+        <MaterialIcons name="menu" size={32} color="#fff" /> {/* Slightly larger */}
       </TouchableOpacity>
 
       <Text style={styles.title}>Rapport Dosage</Text>
@@ -74,27 +74,27 @@ export default function Header({ userInitial, onLogout }: HeaderProps) {
           <View style={styles.divider} />
 
           {/* Menu Items */}
-       <TouchableOpacity
-  style={styles.sidebarItem}
-  onPress={() => {
-    closeSidebar();
-    navigation.navigate('AllReports', { headerTitle: 'Historique générale' });
-  }}
->
-  <MaterialIcons name="list-alt" size={22} color="#A45B17" />
-  <Text style={styles.sidebarText}>Tous les Rapports</Text>
-</TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sidebarItem}
+            onPress={() => {
+              closeSidebar();
+              navigation.navigate('AllReports', { headerTitle: 'Historique générale' });
+            }}
+          >
+            <MaterialIcons name="list-alt" size={22} color="#A45B17" />
+            <Text style={styles.sidebarText}>Tous les Rapports</Text>
+          </TouchableOpacity>
 
-<TouchableOpacity
-  style={styles.sidebarItem}
-  onPress={() => {
-    closeSidebar();
-    navigation.navigate('Home', { newReport: true, headerTitle: 'Historique de Mes Rapports' });
-  }}
->
-  <MaterialIcons name="assignment" size={22} color="#A45B17" />
-  <Text style={styles.sidebarText}>Mes Rapports</Text>
-</TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sidebarItem}
+            onPress={() => {
+              closeSidebar();
+              navigation.navigate('Home', { newReport: true, headerTitle: 'Historique de Mes Rapports' });
+            }}
+          >
+            <MaterialIcons name="assignment" size={22} color="#A45B17" />
+            <Text style={styles.sidebarText}>Mes Rapports</Text>
+          </TouchableOpacity>
         </Animated.View>
       </Modal>
 
@@ -122,7 +122,7 @@ export default function Header({ userInitial, onLogout }: HeaderProps) {
 
 const styles = StyleSheet.create({
   container: {
-    height: 60,
+    height: 65, // Slightly increased height
     paddingHorizontal: 16,
     backgroundColor: '#A45B17',
     flexDirection: 'row',
@@ -131,14 +131,14 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22, // Slightly larger title
     color: '#fff',
     fontWeight: 'bold',
   },
   avatarCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34, // Slightly larger avatar
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
@@ -146,6 +146,7 @@ const styles = StyleSheet.create({
   avatarText: {
     color: '#A45B17',
     fontWeight: 'bold',
+    fontSize: 18, // Slightly larger avatar text
   },
   avatarOverlay: {
     flex: 1,

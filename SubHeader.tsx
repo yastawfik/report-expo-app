@@ -26,7 +26,8 @@ export default function SubHeader({ onFilterPress, title }: Props) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 4, // Further reduced top padding
+    paddingBottom: 10,
     backgroundColor: '#fff',
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -42,5 +43,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     color: '#A45B17',
+    marginTop: 0,
+    marginBottom: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
 });
