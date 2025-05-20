@@ -14,7 +14,7 @@ import { RootStackParamList, SubReport } from '../type';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { Pressable } from 'react-native-gesture-handler';
+import { Pressable, ScrollView } from 'react-native-gesture-handler';
 import axios from 'axios';
 
 
@@ -24,6 +24,9 @@ function ReportDetailScreen({ route }: { route: ReportDetailRouteProp }) {
   const { report } = route.params;
   // Use report here...
 }
+const HEADER_HEIGHT = 20;
+const SUB_HEADER_HEIGHT = 0;
+const TOP_OFFSET = HEADER_HEIGHT + SUB_HEADER_HEIGHT;
 
 const downloadReportPdf = async (reportId: number) => {
   try {
@@ -97,7 +100,13 @@ export default function ReportDetail() {
   }
 
   return (
-    <View style={styles.container}>
+  <View style={{ flex: 1 }}>
+     <ScrollView
+        style={[styles.scrollView, { position: 'absolute', top: TOP_OFFSET, bottom: 0, left: 0, right: 0 }]}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator
+      >
+    <View style={styles.innerContent}>
       <Text style={styles.header}>Détails du Rapport</Text>
 
       <View style={styles.card}>
@@ -183,6 +192,10 @@ export default function ReportDetail() {
         <Text style={styles.buttonText}>Fermer</Text>
       </Pressable>
     </View>
+    </ScrollView>
+  
+  </View>
+
   );
 }
 
@@ -192,12 +205,24 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#FFF',
   },
+    contentContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
   header: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#A45B17',
     marginBottom: 10,
   },
+    scrollView: {
+    backgroundColor: '#f4f4f4',
+  },
+  scrollContainer: {
+  padding: 16,
+  paddingBottom: 80, // extra space for bottom buttons
+  backgroundColor: '#FFF',
+},
   card: {
     backgroundColor: '#F8EDE3',
     borderRadius: 10,
@@ -209,6 +234,10 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 5,
   },
+  
+innerContent: {
+  flexGrow: 1, // allows scrolling even with little content
+},
   value: {
     fontWeight: 'bold',
   },

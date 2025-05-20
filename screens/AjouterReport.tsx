@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Pressable,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
@@ -31,6 +32,11 @@ type SubReport = {
 
 const zones = ['Séchoir', 'Zone 2', 'Zone 3'];
 const shifts = ['7-15', '15-23', '23-7'];
+
+const HEADER_HEIGHT = 20;
+const SUB_HEADER_HEIGHT = 0;
+const TOP_OFFSET = HEADER_HEIGHT + SUB_HEADER_HEIGHT;
+
 
 const AjouterReport = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -155,11 +161,12 @@ const AjouterReport = () => {
   const usedZones = zoneForms.map((f) => f.zone).filter(Boolean);
 
   return (
-    <View style={styles.container}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer} 
-        showsVerticalScrollIndicator={true} // Enable vertical scrollbar
-      >
+    <View style={{ flex: 1 }}>
+        <ScrollView
+           style={[styles.scrollView, { position: 'absolute', top: TOP_OFFSET, bottom: 0, left: 0, right: 0 }]}
+           contentContainerStyle={styles.contentContainer}
+           showsVerticalScrollIndicator
+         >
         <View style={styles.section}>
           <Text style={styles.label}>Date</Text>
           <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.inputBox}>
@@ -292,6 +299,9 @@ const AjouterReport = () => {
         <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
           <Text style={styles.saveButtonText}>Enregistrer</Text>
         </TouchableOpacity>
+        <Pressable style={styles.closeButton} onPress={() => navigation.goBack()}>
+                <Text style={styles.buttonText}>Fermer</Text>
+              </Pressable>
       </ScrollView>
     </View>
   );
@@ -308,6 +318,13 @@ const styles = StyleSheet.create({
     gap: 10,
     justifyContent: 'space-evenly',
     marginTop: 10,
+  },
+        scrollView: {
+    backgroundColor: '#f4f4f4',
+  },
+      contentContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
   },
   zoneButton: {
     backgroundColor: '#f1f1f1',
@@ -364,6 +381,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 8,
     marginTop: -5,
+  },
+    closeButton: {
+    marginTop: 15,
+    backgroundColor: '#7a0012',
+    padding: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
   },
 });
 

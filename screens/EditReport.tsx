@@ -37,6 +37,10 @@ export default function EditScreen() {
   const zones = ['Séchoir', 'Zone 2', 'Zone 3'];
   const brickTypes = ['B8-25', 'B10', 'B12'];
 
+  const HEADER_HEIGHT = 20;
+  const SUB_HEADER_HEIGHT = 0;
+  const TOP_OFFSET = HEADER_HEIGHT + SUB_HEADER_HEIGHT;
+
   useEffect(() => {
     const fetchFullReport = async () => {
       try {
@@ -155,16 +159,13 @@ export default function EditScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#FFF' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-    >
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        keyboardShouldPersistTaps="handled"
-      >
+    
+     <View style={{ flex: 1 }}>
+         <ScrollView
+            style={[styles.scrollView, { position: 'absolute', top: TOP_OFFSET, bottom: 0, left: 0, right: 0 }]}
+            contentContainerStyle={styles.contentContainer}
+            showsVerticalScrollIndicator
+          >
         <Text style={styles.header}>Modifier le Rapport</Text>
 
         <Text style={styles.label}>📅 Date: {fullReport.created_at.split('T')[0]}</Text>
@@ -250,7 +251,8 @@ export default function EditScreen() {
           <Text style={styles.buttonText}>Fermer</Text>
         </TouchableOpacity>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+   
   );
 }
 
@@ -266,6 +268,13 @@ const styles = StyleSheet.create({
     color: '#A45B17',
     marginBottom: 15,
     textAlign: 'center',
+  },
+      contentContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+      scrollView: {
+    backgroundColor: '#f4f4f4',
   },
   label: {
     fontSize: 16,
@@ -337,6 +346,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#7a3e0a',
   },
+  
   averageValue: {
     color: '#A45B17',
     fontWeight: 'bold',

@@ -168,7 +168,7 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <Header userInitial={userInitial} onLogout={handleLogout} />
-      <SubHeader title="Historique de Mes Rapports" />
+      <SubHeader title="Historique Personnel" />
       {loading ? (
         <ActivityIndicator size="large" color="#A45B17" style={{ marginTop: 50 }} />
       ) : (
