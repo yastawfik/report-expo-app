@@ -111,11 +111,10 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
  const renderItem = ({ item, index }: { item: Report; index: number }) => {
     const date = new Date(item.created_at);
     const isFirstItem = index === 0;
-    const cardStyle = [styles.card];
-    if (isFirstItem) {
-      cardStyle.push({ marginTop: FIRST_ITEM_MARGIN_TOP });
-    }
-
+   const cardStyle = isFirstItem
+      ? [{ ...styles.card, marginTop: FIRST_ITEM_MARGIN_TOP }]
+      : [styles.card];
+      
     return (
       <View style={styles.card}>
         <Text style={styles.name}>{item.user?.name || 'Nom Inconnu'}</Text>
@@ -235,6 +234,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     marginBottom: 16,
+    marginTop: 0, // Added to allow dynamic marginTop override
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 1, height: 1 },

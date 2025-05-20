@@ -14,6 +14,8 @@ import SubHeader from '../SubHeader';
 import { useNavigation } from '@react-navigation/native';
 import { Report } from '../type';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../Auth'; // Adjust the import path as necessary
 
 // Define the combined height of Header and SubHeader
 const HEADER_HEIGHT = 60;
@@ -25,7 +27,8 @@ export default function AllReportsScreen() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<any>();
-  const [userInitial, setUserInitial] = useState('A');
+  const [userInitial, setUserInitial] = useState('');
+   const { setIsLoggedIn } = useAuth();
 
   const fetchAllReports = async () => {
     try {
@@ -43,18 +46,35 @@ export default function AllReportsScreen() {
       setLoading(false);
     }
   };
+const fetchUser = async () => {
+  try {
+    const userJson = await AsyncStorage.getItem('user');
+    const user = userJson ? JSON.parse(userJson) : null;
+    if (user?.name) {
+      setUserInitial(user.name[0].toUpperCase());
+    }
+  } catch (error) {
+    console.error('❌ Error reading user from storage:', error);
+  }
+};
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('user');
+    setIsLoggedIn(false);
+  };
 
   useEffect(() => {
     fetchAllReports();
+    fetchUser();
   }, []);
 
   const renderItem = ({ item, index }: { item: Report; index: number }) => {
     const date = new Date(item.created_at);
     const isFirstItem = index === 0;
-    const cardStyle = [styles.card];
-    if (isFirstItem) {
-      cardStyle.push({ marginTop: FIRST_ITEM_MARGIN_TOP });
-    }
+    const cardStyle = isFirstItem
+      ? [{ ...styles.card, marginTop: FIRST_ITEM_MARGIN_TOP }]
+      : [styles.card];
+    
 
     return (
       <View style={cardStyle}>
@@ -84,26 +104,26 @@ export default function AllReportsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header userInitial={userInitial} onLogout={() => {}} />
-      <SubHeader title="Historique Général" />
-      {loading ? (
-        <ActivityIndicator size="large" color="#A45B17" style={{ marginTop: 50 }} />
-      ) : (
-        <FlatList
-          data={reports}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={[styles.listContainer]} // Removed paddingTop here
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Aucun rapport disponible.</Text>
-          }
-          style={[styles.flatList, { position: 'absolute', top: TOP_OFFSET, bottom: 0, left: 0, right: 0 }]}
-          showsVerticalScrollIndicator={true}
-          scrollEnabled={true}
-        />
-      )}
-    </SafeAreaView>
+<SafeAreaView style={styles.safeArea}>
+  <Header userInitial={userInitial} onLogout={() => handleLogout()} />
+  <SubHeader title="Historique Général" />
+  {loading ? (
+    <ActivityIndicator size="large" color="#A45B17" style={{ marginTop: 50 }} />
+  ) : (
+    <FlatList
+      data={reports}
+      renderItem={renderItem}
+      keyExtractor={(item) => item.id.toString()}
+      contentContainerStyle={styles.listContainer}
+      ListEmptyComponent={
+        <Text style={styles.emptyText}>Aucun rapport disponible.</Text>
+      }
+      style={[styles.flatList, { position: 'absolute', top: TOP_OFFSET, bottom: 0, left: 0, right: 0 }]}
+      showsVerticalScrollIndicator={true}
+      scrollEnabled={true}
+    />
+  )}
+</SafeAreaView>
   );
 }
 
