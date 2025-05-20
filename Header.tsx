@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,19 +11,39 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type HeaderProps = {
-  userInitial: string;
   onLogout: () => void;
+  userInitial: string;
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-export default function Header({ userInitial, onLogout }: HeaderProps) {
+export default function Header({ onLogout }: HeaderProps) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [avatarModalVisible, setAvatarModalVisible] = useState(false);
+  const [userInitial, setUserInitial] = useState('U');
+  const [username, setUsername] = useState('Utilisateur');
   const sidebarAnim = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
   const navigation = useNavigation<any>();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userJson = await AsyncStorage.getItem('user');
+        const user = userJson ? JSON.parse(userJson) : null;
+        if (user?.name) {
+          setUserInitial(user.name[0].toUpperCase());
+          setUsername(user.name);
+        }
+      } catch (error) {
+        console.error('❌ Error reading user from storage:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const openSidebar = () => {
     setSidebarVisible(true);
@@ -46,7 +66,7 @@ export default function Header({ userInitial, onLogout }: HeaderProps) {
     <View style={styles.container}>
       {/* Hamburger Icon */}
       <TouchableOpacity onPress={openSidebar}>
-        <MaterialIcons name="menu" size={32} color="#fff" /> {/* Slightly larger */}
+        <MaterialIcons name="menu" size={32} color="#fff" />
       </TouchableOpacity>
 
       <Text style={styles.title}>Rapport Dosage</Text>
@@ -67,7 +87,7 @@ export default function Header({ userInitial, onLogout }: HeaderProps) {
             <View style={styles.sidebarAvatar}>
               <Text style={styles.sidebarAvatarText}>{userInitial}</Text>
             </View>
-            <Text style={styles.sidebarWelcome}>Bienvenue!</Text>
+            <Text style={styles.sidebarWelcome}>Bienvenue, {username}!</Text>
           </View>
 
           {/* Divider */}
@@ -122,7 +142,7 @@ export default function Header({ userInitial, onLogout }: HeaderProps) {
 
 const styles = StyleSheet.create({
   container: {
-    height: 65, // Slightly increased height
+    height: 65,
     paddingHorizontal: 16,
     backgroundColor: '#A45B17',
     flexDirection: 'row',
@@ -131,12 +151,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   title: {
-    fontSize: 22, // Slightly larger title
+    fontSize: 22,
     color: '#fff',
     fontWeight: 'bold',
   },
   avatarCircle: {
-    width: 34, // Slightly larger avatar
+    width: 34,
     height: 34,
     borderRadius: 17,
     backgroundColor: '#fff',
@@ -146,7 +166,7 @@ const styles = StyleSheet.create({
   avatarText: {
     color: '#A45B17',
     fontWeight: 'bold',
-    fontSize: 18, // Slightly larger avatar text
+    fontSize: 18,
   },
   avatarOverlay: {
     flex: 1,
