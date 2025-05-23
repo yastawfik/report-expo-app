@@ -3,7 +3,7 @@
 import axios from 'axios';
 
 // Change this to match your Laravel backend URL (use your local IP for physical device testing)
-const API_BASE_URL = 'http://192.168.103.47 :8000/api'; // <-- Replace with your IP address and port
+const API_BASE_URL = 'http://192.168.103.24 :8000/api'; // <-- Replace with your IP address and port
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -59,6 +59,11 @@ export const createReport = async ({
     subreports,
   });
 
+  return response.data;
+};
+
+export const fetchLockedReports = async () => {
+  const response = await axios.get(`${API_BASE_URL}/reports?locked=1`);
   return response.data;
 };
 

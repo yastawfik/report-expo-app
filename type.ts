@@ -23,6 +23,10 @@ export type Report = {
   datetime?: string;
   averageWeight?: number;
   locked?: boolean;
+  username:string;
+  date:string;
+  time:string;
+
 };
   export type RootStackParamList = {
     Login: undefined; 
@@ -34,7 +38,7 @@ export type Report = {
     EditReport: { report: Report };
     AllReports: undefined;
     updatedReport: Report;
-    
+    ListDePoids: undefined;
   };
   export interface User {
     id: number;

@@ -12,6 +12,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 
 type HeaderProps = {
   onLogout: () => void;
@@ -94,6 +95,17 @@ export default function Header({ onLogout }: HeaderProps) {
           <View style={styles.divider} />
 
           {/* Menu Items */}
+          <TouchableOpacity
+            style={styles.sidebarItem}
+            onPress={() => {
+              closeSidebar();
+              navigation.navigate('DashBoard', { headerTitle: 'Historique générale' });
+            }}
+          >
+            <MaterialIcons name="dashboard" size={22} color="#A45B17" />
+            <Text style={styles.sidebarText}>DashBoard</Text>
+          </TouchableOpacity>
+          
           <TouchableOpacity
             style={styles.sidebarItem}
             onPress={() => {

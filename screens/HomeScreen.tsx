@@ -47,7 +47,7 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
     try {
       setLoading(true);
       const [reportResponse, userData] = await Promise.all([
-        axios.get('http://192.168.103.47:8000/api/reports'),
+        axios.get('http://192.168.103.24:8000/api/reports'),
         AsyncStorage.getItem('user'),
       ]);
 
@@ -86,7 +86,7 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
     if (reportToDelete === null) return;
 
     try {
-      const response = await axios.delete(`http://192.168.103.47:8000/api/reports/${reportToDelete}`);
+      const response = await axios.delete(`http://192.168.103.24:8000/api/reports/${reportToDelete}`);
       console.log('✅ Report deleted from backend:', response.data);
       setReports((prev) => prev.filter((r) => r.id !== reportToDelete));
     } catch (error: any) {

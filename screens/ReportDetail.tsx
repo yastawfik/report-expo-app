@@ -30,7 +30,7 @@ const TOP_OFFSET = HEADER_HEIGHT + SUB_HEADER_HEIGHT;
 
 const downloadReportPdf = async (reportId: number) => {
   try {
-    const downloadUrl = `http://192.168.103.47:8000/reports/${reportId}/download`;
+    const downloadUrl = `http://192.168.103.24:8000/reports/${reportId}/download`;
 
     if (Platform.OS === 'web') {
       const link = document.createElement('a');
@@ -72,7 +72,7 @@ export default function ReportDetail() {
   useEffect(() => {
     const fetchFullReport = async () => {
       try {
-        const response = await axios.get(`http://192.168.103.47:8000/api/reports/${initialReport.id}`);
+        const response = await axios.get(`http://192.168.103.24:8000/api/reports/${initialReport.id}`);
         setReport(response.data);
         console.log('API response data:', response.data);
       } catch (error) {

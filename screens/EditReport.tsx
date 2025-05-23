@@ -45,7 +45,7 @@ export default function EditScreen() {
     const fetchFullReport = async () => {
       try {
         setLoading(true);
-        const response = await axios.get<Report>(`http://192.168.103.47:8000/api/reports/${report.id}`);
+        const response = await axios.get<Report>(`http://192.168.103.24:8000/api/reports/${report.id}`);
         const fetchedReport = response.data;
 
         setFullReport(fetchedReport);
@@ -126,7 +126,7 @@ export default function EditScreen() {
     setSaving(true);
     try {
       for (let sub of subReports) {
-        await axios.put(`http://192.168.103.47:8000/api/subreports/${sub.id}`, {
+        await axios.put(`http://192.168.103.24:8000/api/subreports/${sub.id}`, {
           zone: sub.zone,
           brick_type: sub.brick_type,
           weights: sub.weights.map((w: string) => parseFloat(w)),

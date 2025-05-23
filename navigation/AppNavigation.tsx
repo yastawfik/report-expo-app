@@ -11,6 +11,8 @@ import { Platform, StatusBar} from 'react-native';
 import AjouterReport from '../screens/AjouterReport';
 import EditReport from '../screens/EditReport';
 import AllReportsScreen from '../screens/AllReportsScreen';
+import ListDePoidsScreen from '../screens/ListDePoidsScreen'
+import DashboardScreen from '../screens/DashBoardScreen';
 
 
 const Stack = createStackNavigator();
@@ -34,6 +36,9 @@ export default function AppNavigation() {
       <Stack.Screen name="ReportForm" component={ReportForm} />
       <Stack.Screen name="EditReport" component={EditReport} options={{ title: 'Modifier Rapport' }} />
       <Stack.Screen name="AllReports" component={AllReportsScreen} />
+      <Stack.Screen name="ListDePoids" component={ListDePoidsScreen} />
+      <Stack.Screen name="DashBoard" component={DashboardScreen} />
+
 
     </>
   )}

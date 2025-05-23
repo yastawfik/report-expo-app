@@ -30,7 +30,7 @@ type SubReport = {
   averageWeight: string;
 };
 
-const zones = ['Séchoir', 'Zone 2', 'Zone 3'];
+const zones = ['Séchoir', 'Four', 'Monobloc'];
 const shifts = ['7-15', '15-23', '23-7'];
 
 const HEADER_HEIGHT = 20;
@@ -146,7 +146,7 @@ const AjouterReport = () => {
         subreports,
       };
 
-      const response = await axios.post('http://192.168.103.47:8000/api/reports', payload, {
+      const response = await axios.post('http://192.168.103.24:8000/api/reports', payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
