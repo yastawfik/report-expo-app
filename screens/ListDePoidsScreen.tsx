@@ -22,7 +22,7 @@ const DashboardScreen = () => {
   const [showLockedOnly, setShowLockedOnly] = useState(true);
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const baseUrl = 'http://192.168.103.24:8000/api';
+  const baseUrl = 'http://192.168.105.108:8000/api';
 
   if (Platform.OS !== 'web') {
     return (

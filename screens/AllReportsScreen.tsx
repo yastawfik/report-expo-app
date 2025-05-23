@@ -33,7 +33,7 @@ export default function AllReportsScreen() {
   const fetchAllReports = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://192.168.103.24:8000/api/reports');
+      const response = await axios.get('http://192.168.105.108:8000/api/reports');
       const data = (response.data as { data: Report[] }).data;
       const sorted = data.sort(
         (a: Report, b: Report) =>

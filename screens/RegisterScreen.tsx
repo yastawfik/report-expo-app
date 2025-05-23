@@ -18,7 +18,7 @@
       try {
         setLoading(true);
         setError('');
-        await axios.post('http://192.168.103.24:8000/api/register', {
+        await axios.post('http://192.168.105.108:8000/api/register', {
           name,
           email,
           password,

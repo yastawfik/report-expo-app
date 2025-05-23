@@ -7,7 +7,8 @@ import {
   Modal,
   Pressable,
   Animated,
-  Dimensions
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -18,6 +19,7 @@ type HeaderProps = {
   onLogout: () => void;
   userInitial: string;
 };
+
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -95,16 +97,20 @@ export default function Header({ onLogout }: HeaderProps) {
           <View style={styles.divider} />
 
           {/* Menu Items */}
-          <TouchableOpacity
-            style={styles.sidebarItem}
-            onPress={() => {
-              closeSidebar();
-              navigation.navigate('DashBoard', { headerTitle: 'Historique générale' });
+         {Platform.OS === 'web' && (
+         <TouchableOpacity
+           style={styles.sidebarItem}
+           onPress={() => {
+            closeSidebar();
+            navigation.navigate('DashBoard');
             }}
-          >
-            <MaterialIcons name="dashboard" size={22} color="#A45B17" />
-            <Text style={styles.sidebarText}>DashBoard</Text>
-          </TouchableOpacity>
+            >
+              <MaterialIcons name="dashboard" size={22} color="#A45B17" />
+              <Text style={styles.sidebarText}>DashBoard</Text>
+            </TouchableOpacity>
+)}
+    
+  
           
           <TouchableOpacity
             style={styles.sidebarItem}
