@@ -209,21 +209,27 @@ export default function EditScreen() {
               </Text>
             )}
 
-            <FlatList
-              data={sub.weights}
-              keyExtractor={(_, i) => i.toString()}
-              numColumns={2}
-              columnWrapperStyle={styles.row}
-              renderItem={({ item, index: weightIndex }) => (
-                <TextInput
-                  style={styles.weightInput}
-                  value={item}
-                  onChangeText={(text) => handleWeightChange(index, weightIndex, text)}
-                  keyboardType="numeric"
-                  placeholder="0"
-                />
-              )}
+        <View style={styles.weightGrid}>
+  {Array.from({ length: Math.ceil(sub.weights.length / 2) }).map((_, rowIndex) => (
+    <View key={rowIndex} style={styles.row}>
+      {sub.weights
+        .slice(rowIndex * 2, rowIndex * 2 + 2)
+        .map((item: string, colIndex: number) => {
+          const weightIndex = rowIndex * 2 + colIndex;
+          return (
+            <TextInput
+              key={weightIndex}
+              style={styles.weightInput}
+              value={item}
+              onChangeText={(text) => handleWeightChange(index, weightIndex, text)}
+              keyboardType="numeric"
+              placeholder="0"
             />
+          );
+        })}
+    </View>
+  ))}
+</View>
 
             <Text style={styles.averageText}>
               ⚖️ Poids Moyen: <Text style={styles.averageValue}>{sub.average_weight} kg</Text>
@@ -281,6 +287,31 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 5,
   },
+  weightGrid: {
+  width: '100%',
+  flexDirection: 'column',
+  gap: 8,
+},
+
+row: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  marginBottom: 8,
+},
+
+weightInput: {
+  flex: 1,
+  backgroundColor: '#FFF',
+  borderColor: '#d4bfa3',
+  borderWidth: 1,
+  borderRadius: 8,
+  paddingHorizontal: 10,
+  height: 40,
+  marginHorizontal: 4,
+  color: '#333',
+  fontWeight: '600',
+},
+
   subCard: {
     backgroundColor: '#F8EDE3',
     borderRadius: 15,
@@ -325,21 +356,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#A45B17',
   },
-  row: {
-    justifyContent: 'space-between',
-  },
-  weightInput: {
-    width: '48%',
-    backgroundColor: '#FFF',
-    borderColor: '#d4bfa3',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    height: 40,
-    marginBottom: 10,
-    color: '#333',
-    fontWeight: '600',
-  },
+
   averageText: {
     marginTop: 10,
     fontWeight: '600',
