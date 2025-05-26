@@ -1,9 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Sidebar from '../components/SideBar';
+import { useAuth } from '../Auth'; // adjust path accordingly
 
-// Example: pass username as prop or get from context/auth
-const DashboardHome = ({ username = 'Utilisateur' }) => {
+const DashboardHome = () => {
+  const { user } = useAuth();
+
+  // user?.name or user?.username depending on your user object structure
+  const username = user?.name || 'Invité';
+
   return (
     <View style={styles.container}>
       <Sidebar />

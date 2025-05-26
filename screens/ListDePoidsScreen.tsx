@@ -41,7 +41,11 @@ const DashboardScreen = () => {
       let url = `${baseUrl}/reports?page=${page}`;
       if (startDate) url += `&start=${startDate}`;
       if (endDate) url += `&end=${endDate}`;
-      if (showLockedOnly) url += `&locked=1`;
+      if (showLockedOnly) {
+        url += `&locked=1`;  // Show locked reports
+      } else {
+        url += `&locked=0`;  // Show unlocked reports
+      }
 
       const response = await fetch(url);
       const json = await response.json();
@@ -74,7 +78,11 @@ const DashboardScreen = () => {
 
       if (startDate) params.push(`start=${startDate}`);
       if (endDate) params.push(`end=${endDate}`);
-      if (showLockedOnly) params.push(`locked=1`);
+      if (showLockedOnly) {
+          params.push(`locked=1`);
+        } else {
+          params.push(`locked=0`);
+        }
 
       if (params.length > 0) {
         exportUrl += '?' + params.join('&');
@@ -108,7 +116,11 @@ const DashboardScreen = () => {
 
     if (startDate) params.push(`start=${startDate}`);
     if (endDate) params.push(`end=${endDate}`);
-    if (showLockedOnly) params.push(`locked=1`);
+      if (showLockedOnly) {
+    params.push(`locked=1`);
+  } else {
+    params.push(`locked=0`);
+  }
 
     if (params.length > 0) {
       url += '?' + params.join('&');

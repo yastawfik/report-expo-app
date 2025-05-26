@@ -34,7 +34,7 @@ export type Report = {
     AjouterReport: { editingReport?: any }| undefined;
     ReportDetail: { report: Report};
     ReportForm: { report: Report};
-    Home: { newReport?: any; updatedReport?: any }| undefined;
+    Home: { username?: string;newReport?: any; updatedReport?: any }| undefined;
     EditReport: { report: Report };
     AllReports: undefined;
     updatedReport: Report;
