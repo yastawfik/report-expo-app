@@ -17,6 +17,7 @@ import Header from '../Header';
 import SubHeader from '../SubHeader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../Auth';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -27,7 +28,6 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // For custom delete confirmation modal
   const [modalVisible, setModalVisible] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<number | null>(null);
 
@@ -36,12 +36,6 @@ export default function HomeScreen() {
     await AsyncStorage.removeItem('user');
     setIsLoggedIn(false);
   };
-
-  // Define the combined height of Header and SubHeader
-const HEADER_HEIGHT = 60;
-const SUB_HEADER_HEIGHT = 46; // Adjust if your SubHeader's actual height is different
-const TOP_OFFSET = HEADER_HEIGHT + SUB_HEADER_HEIGHT;
-const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
 
   const fetchReportsAndUser = async () => {
     try {
@@ -75,13 +69,11 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
     }
   };
 
-  // Show modal to confirm delete
   const confirmDeleteReport = (id: number) => {
     setReportToDelete(id);
     setModalVisible(true);
   };
 
-  // Actually delete report
   const handleDeleteConfirmed = async () => {
     if (reportToDelete === null) return;
 
@@ -91,7 +83,6 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
       setReports((prev) => prev.filter((r) => r.id !== reportToDelete));
     } catch (error: any) {
       console.error('❌ Delete error:', error?.response || error.message || error);
-      // Optional: add some feedback for user here
     } finally {
       setModalVisible(false);
       setReportToDelete(null);
@@ -101,20 +92,15 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
   useFocusEffect(
     useCallback(() => {
       fetchReportsAndUser();
-
       if (route.params?.newReport) {
         navigation.setParams({ newReport: null });
       }
     }, [route.params?.newReport])
   );
 
- const renderItem = ({ item, index }: { item: Report; index: number }) => {
+  const renderItem = ({ item }: { item: Report; index: number }) => {
     const date = new Date(item.created_at);
-    const isFirstItem = index === 0;
-   const cardStyle = isFirstItem
-      ? [{ ...styles.card, marginTop: FIRST_ITEM_MARGIN_TOP }]
-      : [styles.card];
-      
+
     return (
       <View style={styles.card}>
         <Text style={styles.name}>{item.user?.name || 'Nom Inconnu'}</Text>
@@ -140,47 +126,47 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
             <Text style={styles.buttonText}> Voir Détails</Text>
           </TouchableOpacity>
 
-        {!item.locked && (
-  <TouchableOpacity
-    style={[styles.button, styles.editButton]}
-    onPress={() => navigation.navigate('EditReport', { report: item })}
-  >
-    <MaterialIcons name="edit" size={16} color="#fff" />
-    <Text style={styles.buttonText}> Modifier</Text>
-  </TouchableOpacity>
-)}
+          {!item.locked && (
+            <TouchableOpacity
+              style={[styles.button, styles.editButton]}
+              onPress={() => navigation.navigate('EditReport', { report: item })}
+            >
+              <MaterialIcons name="edit" size={16} color="#fff" />
+              <Text style={styles.buttonText}> Modifier</Text>
+            </TouchableOpacity>
+          )}
 
- {!item.locked && (
-  <TouchableOpacity
-    style={[styles.button, styles.deleteButton]}
-    onPress={() => confirmDeleteReport(item.id)}
-  >
-    <MaterialIcons name="delete" size={16} color="#fff" />
-    <Text style={styles.buttonText}> Supprimer</Text>
-  </TouchableOpacity>
-)}
+          {!item.locked && (
+            <TouchableOpacity
+              style={[styles.button, styles.deleteButton]}
+              onPress={() => confirmDeleteReport(item.id)}
+            >
+              <MaterialIcons name="delete" size={16} color="#fff" />
+              <Text style={styles.buttonText}> Supprimer</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
       <Header userInitial={userInitial} onLogout={handleLogout} />
       <SubHeader title="Historique Personnel" />
       {loading ? (
         <ActivityIndicator size="large" color="#A45B17" style={{ marginTop: 50 }} />
       ) : (
-    <FlatList
-  data={reports}
-  renderItem={renderItem}
-  keyExtractor={(item) => item.id.toString()}
-  contentContainerStyle={styles.list}
-  ListEmptyComponent={<Text style={styles.emptyText}>Aucun rapport trouvé.</Text>}
-  style={[styles.flatList, { position: 'absolute', top: TOP_OFFSET, bottom: 0, left: 0, right: 0 }]}
-   showsVerticalScrollIndicator={true}
- scrollEnabled={true}
-/>
+        <FlatList
+          data={reports}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<Text style={styles.emptyText}>Aucun rapport trouvé.</Text>}
+          style={styles.flatList}
+          showsVerticalScrollIndicator={true}
+          scrollEnabled={true}
+        />
       )}
 
       <TouchableOpacity
@@ -190,7 +176,6 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
         <MaterialIcons name="add-circle" size={56} color="#A45B17" />
       </TouchableOpacity>
 
-      {/* Custom confirmation modal */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -220,7 +205,7 @@ const FIRST_ITEM_MARGIN_TOP = 16; // Adjust this value to control the space
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -234,7 +219,6 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     marginBottom: 16,
-    marginTop: 0, // Added to allow dynamic marginTop override
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 1, height: 1 },
@@ -304,8 +288,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#d9534f',
     marginLeft: 8,
   },
-
-  // Modal styles
+  flatList: {
+    backgroundColor: '#f4f4f4',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -332,9 +317,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
-    flatList: {
-    backgroundColor: '#f4f4f4',
-  },
   modalButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -345,7 +327,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
   },
   deleteConfirmButton: {
-    backgroundColor: '#d9534f',     
+    backgroundColor: '#d9534f',
   },
   modalButtonText: {
     fontSize: 16,
