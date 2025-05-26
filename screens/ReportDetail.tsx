@@ -301,13 +301,13 @@ innerContent: {
   },
   closeButton: {
     marginTop: 15,
-    backgroundColor: '#7a0012',
+    backgroundColor: '#CA0B00',
     padding: 12,
     borderRadius: 25,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#FFF',
+    color: '#fff',
     fontWeight: 'bold',
   },
 });

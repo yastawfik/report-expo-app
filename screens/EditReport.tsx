@@ -174,7 +174,6 @@ export default function EditScreen() {
         {subReports.map((sub, index) => (
           <View key={sub.id || index} style={styles.subCard}>
             <Text style={styles.subTitle}>🧱 Zone {index + 1}</Text>
-
             <Text style={styles.inputLabel}>Zone</Text>
             <Picker
               selectedValue={sub.zone}
@@ -385,7 +384,7 @@ weightInput: {
     fontSize: 17,
   },
   closeButton: {
-    backgroundColor: '#7a3e0a',
+    backgroundColor: '#CA0B00',
     paddingVertical: 14,
     borderRadius: 20,
     marginTop: 5,
