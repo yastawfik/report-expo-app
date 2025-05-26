@@ -13,7 +13,6 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 
 type HeaderProps = {
   onLogout: () => void;
@@ -218,17 +217,23 @@ const styles = StyleSheet.create({
 },
   sidebar: {
     position: 'absolute',
-    top: 37,
+    top: 65,
     bottom: 0,
     width: 280,
     backgroundColor: '#fff',
     paddingTop: 40,
     paddingHorizontal: 16,
-   elevation: 0,
-  shadowColor: 'transparent',
-    borderRightWidth: 1,
-    borderRightColor: '#ddd',
+     ...Platform.select({
+      android: {
+        elevation: 0,
+        shadowColor: 'transparent',
+        borderRightWidth: 1,
+        borderRightColor: '#ddd',
+        top: 37,
+      },
+    }),
   },
+ 
   sidebarHeader: {
     alignItems: 'center',
     marginBottom: 20,
