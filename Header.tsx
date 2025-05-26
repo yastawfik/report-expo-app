@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
 },
   sidebar: {
     position: 'absolute',
-    top: 38,
+    top: 37,
     bottom: 0,
     width: 280,
     backgroundColor: '#fff',
