@@ -156,18 +156,19 @@ export default function ReportDetail() {
                 🗓️ Date: <Text style={styles.value}>{sub.datetime?.split('T')[0] || 'N/A'}</Text>
               </Text>
 
-              <FlatList
-                data={parsedWeights}
-                numColumns={2}
-                columnWrapperStyle={styles.row}
-                keyExtractor={(_, index) => `${sub.id}-${index}`}
-                renderItem={({ item, index }) => (
-                  <View style={styles.weightCard}>
-                    <Text style={styles.weightLabel}>#{index + 1}</Text>
-                    <Text style={styles.weightValue}>{item} kg</Text>
-                  </View>
-                )}
-              />
+         <FlatList
+  data={parsedWeights}
+  numColumns={2}
+  keyExtractor={(_, index) => `${sub.id}-${index}`}
+  columnWrapperStyle={styles.row}
+  scrollEnabled={false} // important so the outer ScrollView handles scrolling
+  renderItem={({ item, index }) => (
+    <View style={styles.weightCard}>
+      <Text style={styles.weightLabel}>#{index + 1}</Text>
+      <Text style={styles.weightValue}>{item} kg</Text>
+    </View>
+  )}
+/>
 
               <Text style={styles.averageText}>
                 ⚖️ Poids Moyen: <Text style={styles.averageValue}>{average.toFixed(2)} kg</Text>
